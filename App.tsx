@@ -8,6 +8,8 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import EventsScreen from './src/components/screens/EventsScreen';
+import HomeScreen from './src/components/screens/HomeScreen';
+import RadarScreen from './src/components/screens/RadarScreen';
 import ScreenBackground from './src/components/shared/ScreenBackground';
 import { COLOR_CYAN, FONT_DISPLAY } from './src/theme/tokens';
 
@@ -23,24 +25,23 @@ function PlaceholderScreen({ name }: { name: string }) {
   );
 }
 
-// EventsScreen imported from src/components/screens/EventsScreen
-const RadarScreen  = () => <PlaceholderScreen name="RADAR" />;
-const MapScreen    = () => <PlaceholderScreen name="MAP" />;
-const TimesScreen  = () => <PlaceholderScreen name="TIMES" />;
-const KitScreen    = () => <PlaceholderScreen name="KIT" />;
-const SosScreen    = () => <PlaceholderScreen name="SOS" />;
+const MapScreen   = () => <PlaceholderScreen name="MAP" />;
+const TimesScreen = () => <PlaceholderScreen name="TIMES" />;
+const KitScreen   = () => <PlaceholderScreen name="KIT" />;
+const SosScreen   = () => <PlaceholderScreen name="SOS" />;
 
 // ─── Tab icon map ─────────────────────────────────────────────────────────────
 
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<string, { active: IoniconsName; inactive: IoniconsName }> = {
-  EVENTS: { active: 'radio',         inactive: 'radio-outline' },
-  RADAR:  { active: 'wifi',          inactive: 'wifi-outline' },
-  MAP:    { active: 'map',           inactive: 'map-outline' },
-  TIMES:  { active: 'time',          inactive: 'time-outline' },
-  KIT:    { active: 'bag',           inactive: 'bag-outline' },
-  SOS:    { active: 'alert-circle',  inactive: 'alert-circle-outline' },
+  HOME:   { active: 'grid',         inactive: 'grid-outline' },
+  EVENTS: { active: 'radio',        inactive: 'radio-outline' },
+  RADAR:  { active: 'wifi',         inactive: 'wifi-outline' },
+  MAP:    { active: 'map',          inactive: 'map-outline' },
+  TIMES:  { active: 'time',         inactive: 'time-outline' },
+  KIT:    { active: 'bag',          inactive: 'bag-outline' },
+  SOS:    { active: 'alert-circle', inactive: 'alert-circle-outline' },
 };
 
 // ─── Navigator ────────────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ export default function App() {
           },
         })}
       >
+        <Tab.Screen name="HOME"   component={HomeScreen} />
         <Tab.Screen name="EVENTS" component={EventsScreen} />
         <Tab.Screen name="RADAR"  component={RadarScreen} />
         <Tab.Screen name="MAP"    component={MapScreen} />

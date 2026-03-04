@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
-import { COLOR_BACKGROUND, COLOR_CYAN, COLOR_MAGENTA } from '../../theme/tokens';
+import { Animated, ImageBackground, StyleSheet, View } from 'react-native';
+import { COLOR_CYAN, COLOR_MAGENTA } from '../../theme/tokens';
+
+const BG_IMAGE = require('../../assets/rave-festival-bg.jpg');
 
 interface ScreenBackgroundProps {
   children: React.ReactNode;
@@ -43,7 +45,10 @@ export default function ScreenBackground({ children }: ScreenBackgroundProps) {
   }, [orb1Scale, orb2Scale]);
 
   return (
-    <View style={styles.container}>
+    <ImageBackground source={BG_IMAGE} style={styles.container} resizeMode="cover" imageStyle={styles.image}>
+      {/* Dark overlay */}
+      <View style={styles.overlay} />
+
       {/* Orb 1 — top right, cyan */}
       <Animated.View
         style={[
@@ -70,14 +75,27 @@ export default function ScreenBackground({ children }: ScreenBackgroundProps) {
       </View>
 
       {children}
-    </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLOR_BACKGROUND,
+    width: '100%',
+    height: '100%',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(3,6,15,0.78)',
   },
   orb: {
     position: 'absolute',
@@ -89,7 +107,7 @@ const styles = StyleSheet.create({
     top: -60,
     right: -60,
     backgroundColor: COLOR_CYAN,
-    opacity: 0.10,
+    opacity: 0.12,
   },
   orb2: {
     width: 220,
@@ -97,7 +115,7 @@ const styles = StyleSheet.create({
     bottom: -50,
     left: -50,
     backgroundColor: COLOR_MAGENTA,
-    opacity: 0.08,
+    opacity: 0.09,
   },
   scanlines: {
     position: 'absolute',
@@ -111,6 +129,6 @@ const styles = StyleSheet.create({
   scanline: {
     height: 1,
     backgroundColor: '#ffffff',
-    opacity: 0.03,
+    opacity: 0.04,
   },
 });

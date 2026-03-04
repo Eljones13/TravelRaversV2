@@ -30,7 +30,17 @@ export default function HudHeader({ title, gpsStatus, batteryPercent }: HudHeade
   return (
     <View style={styles.container}>
       {/* GPS badge — left */}
-      <View style={[styles.gpsBadge, { borderColor: gpsColor }]}>
+      <View style={[
+        styles.gpsBadge,
+        {
+          borderColor: gpsColor,
+          shadowColor: gpsColor,
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: 6,
+          shadowOpacity: 0.9,
+          elevation: 4,
+        },
+      ]}>
         <View style={[styles.gpsDot, { backgroundColor: gpsColor }]} />
         <Text style={[styles.gpsLabel, { color: gpsColor }]}>{gpsStatus}</Text>
       </View>
@@ -39,7 +49,15 @@ export default function HudHeader({ title, gpsStatus, batteryPercent }: HudHeade
       <Text style={styles.title}>{title.toUpperCase()}</Text>
 
       {/* Battery — right */}
-      <Text style={[styles.battery, { color: batteryColor }]}>
+      <Text style={[
+        styles.battery,
+        {
+          color: batteryColor,
+          textShadowColor: batteryColor,
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 6,
+        },
+      ]}>
         {batteryPercent}%
       </Text>
     </View>
@@ -52,7 +70,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(3,6,15,0.92)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,245,255,0.12)',
   },
   gpsBadge: {
     flexDirection: 'row',
@@ -78,6 +99,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLOR_CYAN,
     letterSpacing: 2,
+    textShadowColor: 'rgba(0,245,255,0.8)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   battery: {
     fontFamily: FONT_MONO,
