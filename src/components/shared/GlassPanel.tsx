@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(12,24,48,0.70)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 16,
+    borderRadius: 24,
     overflow: 'hidden',
   },
   blur: {

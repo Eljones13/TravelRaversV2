@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef } from 'react';
@@ -19,8 +18,10 @@ import {
   FONT_MONO,
 } from '../../theme/tokens';
 import GlassPanel from '../shared/GlassPanel';
+import GlowBorderCard from '../shared/GlowBorderCard';
 import HudHeader from '../shared/HudHeader';
 import MeshStatusBar from '../shared/MeshStatusBar';
+import { NeonIcon, NeonIconName } from '../shared/NeonIcons';
 import ScreenBackground from '../shared/ScreenBackground';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,24 +37,23 @@ type RootTabParamList = {
 };
 
 type NavProp = BottomTabNavigationProp<RootTabParamList>;
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 interface FeatureCard {
   id: keyof RootTabParamList;
   label: string;
   sublabel: string;
-  icon: IoniconsName;
+  icon: NeonIconName;
   color: string;
   sos?: boolean;
 }
 
 const FEATURE_CARDS: FeatureCard[] = [
-  { id: 'EVENTS', label: 'EVENTS',    sublabel: 'Pick Your Festival', icon: 'radio',        color: '#00f5ff' },
-  { id: 'RADAR',  label: 'RADAR',     sublabel: 'Find Your Squad',    icon: 'wifi',         color: '#ff00ff' },
-  { id: 'MAP',    label: 'MAP',       sublabel: 'Festival Map',       icon: 'map',          color: '#00ff88' },
-  { id: 'TIMES',  label: 'TIMETABLE', sublabel: 'Set Schedule',       icon: 'time',         color: '#ffcc00' },
-  { id: 'KIT',    label: 'KIT',       sublabel: 'Packing List',       icon: 'bag',          color: '#ff8c00' },
-  { id: 'SOS',    label: 'SOS',       sublabel: 'Emergency',          icon: 'alert-circle', color: '#ff0040', sos: true },
+  { id: 'EVENTS', label: 'EVENTS',    sublabel: 'Pick Your Festival', icon: 'EVENTS', color: '#00f5ff' },
+  { id: 'RADAR',  label: 'RADAR',     sublabel: 'Find Your Squad',    icon: 'RADAR',  color: '#ff00ff' },
+  { id: 'MAP',    label: 'MAP',       sublabel: 'Festival Map',       icon: 'MAP',    color: '#00ff88' },
+  { id: 'TIMES',  label: 'TIMETABLE', sublabel: 'Set Schedule',       icon: 'TIMES',  color: '#ffcc00' },
+  { id: 'KIT',    label: 'KIT',       sublabel: 'Packing List',       icon: 'KIT',    color: '#ff8c00' },
+  { id: 'SOS',    label: 'SOS',       sublabel: 'Emergency',          icon: 'SOS',    color: '#ff0040', sos: true },
 ];
 
 // ─── Task 1: Hero header ──────────────────────────────────────────────────────
@@ -143,10 +143,10 @@ function CardCorners({ color }: { color: string }) {
   const base = { position: 'absolute' as const, width: 14, height: 14, borderColor };
   return (
     <>
-      <View pointerEvents="none" style={[base, { top: 5, left: 5, borderTopWidth: 1.5, borderLeftWidth: 1.5 }]} />
-      <View pointerEvents="none" style={[base, { top: 5, right: 5, borderTopWidth: 1.5, borderRightWidth: 1.5 }]} />
-      <View pointerEvents="none" style={[base, { bottom: 5, left: 5, borderBottomWidth: 1.5, borderLeftWidth: 1.5 }]} />
-      <View pointerEvents="none" style={[base, { bottom: 5, right: 5, borderBottomWidth: 1.5, borderRightWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { top: 10, left: 10, borderTopWidth: 1.5, borderLeftWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { top: 10, right: 10, borderTopWidth: 1.5, borderRightWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { bottom: 10, left: 10, borderBottomWidth: 1.5, borderLeftWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { bottom: 10, right: 10, borderBottomWidth: 1.5, borderRightWidth: 1.5 }]} />
     </>
   );
 }
@@ -224,7 +224,7 @@ function FeatureCardItem({ card }: { card: FeatureCard }) {
         style={[
           styles.card,
           card.sos ? styles.cardSos : { backgroundColor: 'rgba(2,6,16,0.85)' },
-          { borderColor: card.color + '66' },
+          { borderColor: card.color + '66', borderRadius: 24 },
         ]}
       >
         <CardGridTexture color={card.color} />
@@ -239,16 +239,7 @@ function FeatureCardItem({ card }: { card: FeatureCard }) {
         )}
 
         <View style={styles.cardInner}>
-          <Ionicons
-            name={card.icon}
-            size={36}
-            color={card.color}
-            style={{
-              textShadowColor: card.color,
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 16,
-            } as object}
-          />
+          <NeonIcon name={card.icon} color={card.color} size={36} />
           <Text style={styles.cardName}>{card.label}</Text>
           <Text style={[styles.cardSub, { color: card.color + 'B3' }]}>{card.sublabel}</Text>
         </View>
@@ -474,10 +465,14 @@ const styles = StyleSheet.create({
   // Task 2: Card
   cardWrapper: {
     width: '47%',
-    aspectRatio: 0.9,
+    aspectRatio: 1,
+    minHeight: 160,
+    borderRadius: 24,
+    overflow: 'hidden',
   },
   card: {
     flex: 1,
+    borderRadius: 24,
     overflow: 'hidden',
   },
   cardSos: {
@@ -490,7 +485,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderWidth: 1.5,
-    borderRadius: 16,
+    borderRadius: 24,
   },
   cardInner: {
     flex: 1,
@@ -498,7 +493,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingHorizontal: 10,
-    paddingVertical: 12,
+    paddingVertical: 20,
+    borderRadius: 24,
+    overflow: 'hidden',
   },
   cardName: {
     fontFamily: FONT_DISPLAY,
