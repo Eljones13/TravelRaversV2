@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Circle, Line, Path, Rect, Svg } from 'react-native-svg';
 import { useFestivalStore } from '../../stores/festivalStore';
 import {
   COLOR_CYAN,
@@ -18,47 +19,106 @@ import {
   FONT_MONO,
 } from '../../theme/tokens';
 import GlassPanel from '../shared/GlassPanel';
-import GlowBorderCard from '../shared/GlowBorderCard';
 import HudHeader from '../shared/HudHeader';
 import MeshStatusBar from '../shared/MeshStatusBar';
-import { NeonIcon, NeonIconName } from '../shared/NeonIcons';
 import ScreenBackground from '../shared/ScreenBackground';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type RootTabParamList = {
-  HOME: undefined;
+  HOME:   undefined;
   EVENTS: undefined;
-  RADAR: undefined;
-  MAP: undefined;
-  TIMES: undefined;
-  KIT: undefined;
-  SOS: undefined;
+  RADAR:  undefined;
+  MAP:    undefined;
+  TIMES:  undefined;
+  KIT:    undefined;
+  SOS:    undefined;
 };
 
 type NavProp = BottomTabNavigationProp<RootTabParamList>;
 
 interface FeatureCard {
-  id: keyof RootTabParamList;
-  label: string;
+  id:       keyof RootTabParamList;
+  label:    string;
   sublabel: string;
-  icon: NeonIconName;
-  color: string;
-  sos?: boolean;
+  color:    string;
+  sos?:     boolean;
 }
 
 const FEATURE_CARDS: FeatureCard[] = [
-  { id: 'EVENTS', label: 'EVENTS',    sublabel: 'Pick Your Festival', icon: 'EVENTS', color: '#00f5ff' },
-  { id: 'RADAR',  label: 'RADAR',     sublabel: 'Find Your Squad',    icon: 'RADAR',  color: '#ff00ff' },
-  { id: 'MAP',    label: 'MAP',       sublabel: 'Festival Map',       icon: 'MAP',    color: '#00ff88' },
-  { id: 'TIMES',  label: 'TIMETABLE', sublabel: 'Set Schedule',       icon: 'TIMES',  color: '#ffcc00' },
-  { id: 'KIT',    label: 'KIT',       sublabel: 'Packing List',       icon: 'KIT',    color: '#ff8c00' },
-  { id: 'SOS',    label: 'SOS',       sublabel: 'Emergency',          icon: 'SOS',    color: '#ff0040', sos: true },
+  { id: 'EVENTS', label: 'EVENTS',    sublabel: 'Pick Your Festival', color: '#00f5ff' },
+  { id: 'RADAR',  label: 'RADAR',     sublabel: 'Find Your Squad',    color: '#ff00ff' },
+  { id: 'MAP',    label: 'MAP',       sublabel: 'Festival Map',       color: '#00ff88' },
+  { id: 'TIMES',  label: 'TIMETABLE', sublabel: 'Set Schedule',       color: '#ffcc00' },
+  { id: 'KIT',    label: 'KIT',       sublabel: 'Packing List',       color: '#ff8c00' },
+  { id: 'SOS',    label: 'SOS',       sublabel: 'Emergency',          color: '#ff0040', sos: true },
 ];
 
-// ─── Task 1: Hero header ──────────────────────────────────────────────────────
+// ─── SVG card icons ───────────────────────────────────────────────────────────
 
-const HERO_HEIGHT = 148;
+function CardSvgIcon({ id, color }: { id: keyof RootTabParamList; color: string }) {
+  const s = 1.5;
+  switch (id) {
+    case 'EVENTS':
+      return (
+        <Svg width={40} height={40} viewBox="0 0 40 40">
+          <Circle cx={20} cy={34} r={2} fill={color} />
+          <Path d="M13 28 Q20 21 27 28" stroke={color} strokeWidth={s} fill="none" strokeLinecap="round" />
+          <Path d="M8 23 Q20 11 32 23"  stroke={color} strokeWidth={s} fill="none" strokeLinecap="round" />
+          <Path d="M4 18 Q20 2 36 18"   stroke={color} strokeWidth={s} fill="none" strokeLinecap="round" />
+        </Svg>
+      );
+    case 'RADAR':
+      return (
+        <Svg width={40} height={40} viewBox="0 0 40 40">
+          <Path d="M20 4 L36 20 L20 36 L4 20 Z" stroke={color} strokeWidth={s} fill="none" />
+          <Line x1={20} y1={4}  x2={20} y2={36} stroke={color} strokeWidth={1} opacity={0.5} />
+          <Line x1={4}  y1={20} x2={36} y2={20} stroke={color} strokeWidth={1} opacity={0.5} />
+          <Circle cx={20} cy={20} r={3} stroke={color} strokeWidth={s} fill="none" />
+        </Svg>
+      );
+    case 'MAP':
+      return (
+        <Svg width={40} height={40} viewBox="0 0 40 40">
+          <Path d="M20 4 L34 12 L34 28 L20 36 L6 28 L6 12 Z" stroke={color} strokeWidth={s} fill="none" />
+          <Circle cx={20} cy={20} r={3} fill={color} />
+        </Svg>
+      );
+    case 'TIMES':
+      return (
+        <Svg width={40} height={40} viewBox="0 0 40 40">
+          <Circle cx={20} cy={20} r={15} stroke={color} strokeWidth={s} fill="none" />
+          {/* Hour hand → 10 o'clock */}
+          <Line x1={20} y1={20} x2={12} y2={12} stroke={color} strokeWidth={s} strokeLinecap="round" />
+          {/* Minute hand → 2 o'clock */}
+          <Line x1={20} y1={20} x2={28} y2={12} stroke={color} strokeWidth={s} strokeLinecap="round" />
+          <Circle cx={20} cy={20} r={1.5} fill={color} />
+        </Svg>
+      );
+    case 'KIT':
+      return (
+        <Svg width={40} height={40} viewBox="0 0 40 40">
+          <Rect x={10} y={14} width={20} height={22} rx={3} stroke={color} strokeWidth={s} fill="none" />
+          <Path d="M14 14 Q14 6 20 6 Q26 6 26 14" stroke={color} strokeWidth={s} fill="none" />
+          <Rect x={13} y={22} width={14} height={8} rx={2} stroke={color} strokeWidth={1} fill="none" opacity={0.7} />
+        </Svg>
+      );
+    case 'SOS':
+      return (
+        <Svg width={40} height={40} viewBox="0 0 40 40">
+          <Path d="M20 6 L36 32 L4 32 Z" stroke={color} strokeWidth={s} fill="none" strokeLinejoin="round" />
+          <Line x1={20} y1={16} x2={20} y2={24} stroke={color} strokeWidth={s} strokeLinecap="round" />
+          <Circle cx={20} cy={28} r={1.5} fill={color} />
+        </Svg>
+      );
+    default:
+      return null;
+  }
+}
+
+// ─── Hero header ──────────────────────────────────────────────────────────────
+
+const HERO_HEIGHT = 240;
 
 function HeroHeader() {
   const scanAnim = useRef(new Animated.Value(0)).current;
@@ -74,7 +134,7 @@ function HeroHeader() {
   }, [scanAnim]);
 
   const scanY = scanAnim.interpolate({
-    inputRange: [0, 1],
+    inputRange:  [0, 1],
     outputRange: [-2, HERO_HEIGHT],
   });
 
@@ -89,18 +149,16 @@ function HeroHeader() {
       <View style={[cornerBase, { bottom: 0, left: 0, borderBottomWidth: 1.5, borderLeftWidth: 1.5 }]} />
       <View style={[cornerBase, { bottom: 0, right: 0, borderBottomWidth: 1.5, borderRightWidth: 1.5 }]} />
 
-      {/* Animated scan line — clipped in its own overflow:hidden container */}
+      {/* Scan line */}
       <View style={styles.scanClip} pointerEvents="none">
         <Animated.View style={[styles.scanLine, { transform: [{ translateY: scanY }] }]} />
       </View>
 
-      <Text style={styles.heroEyebrow}>{'// OFFLINE FESTIVAL OS'}</Text>
-
       <Image
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        source={require('../../../assets/logo-v2.png')}
+        source={require('../../assets/logo-v2.png')}
         style={styles.heroLogo}
-        resizeMode="contain"
+        resizeMode="cover"
       />
 
       <Text style={styles.heroTagline}>PACK · PLAN · PARTY</Text>
@@ -116,83 +174,68 @@ function HeroHeader() {
   );
 }
 
-// ─── Task 2 helpers: card grid texture ───────────────────────────────────────
+// ─── Card diagonal texture ────────────────────────────────────────────────────
 
-function CardGridTexture({ color }: { color: string }) {
-  const lineColor = color + '10'; // ~6%
+function CardDiagonals({ color }: { color: string }) {
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
-      {Array.from({ length: 9 }).map((_, i) => (
+      {[20, 50, 80].map((left, i) => (
         <View
-          key={`h${i}`}
-          style={{ position: 'absolute', left: 0, right: 0, top: (i + 1) * 14, height: 1, backgroundColor: lineColor }}
-        />
-      ))}
-      {Array.from({ length: 9 }).map((_, i) => (
-        <View
-          key={`v${i}`}
-          style={{ position: 'absolute', top: 0, bottom: 0, left: (i + 1) * 14, width: 1, backgroundColor: lineColor }}
+          key={i}
+          style={{
+            position: 'absolute',
+            top: '-25%',
+            left: `${left}%`,
+            width: 1,
+            height: '150%',
+            backgroundColor: color,
+            opacity: 0.04,
+            transform: [{ rotate: '45deg' }],
+          }}
         />
       ))}
     </View>
   );
 }
 
-// ─── Task 2 helpers: card corner brackets ────────────────────────────────────
+// ─── Card corner brackets ─────────────────────────────────────────────────────
 
 function CardCorners({ color }: { color: string }) {
-  const borderColor = color + '99'; // 60%
+  const borderColor = color + '99';
   const base = { position: 'absolute' as const, width: 14, height: 14, borderColor };
   return (
     <>
-      <View pointerEvents="none" style={[base, { top: 10, left: 10, borderTopWidth: 1.5, borderLeftWidth: 1.5 }]} />
-      <View pointerEvents="none" style={[base, { top: 10, right: 10, borderTopWidth: 1.5, borderRightWidth: 1.5 }]} />
-      <View pointerEvents="none" style={[base, { bottom: 10, left: 10, borderBottomWidth: 1.5, borderLeftWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { top: 10, left: 10,   borderTopWidth: 1.5,    borderLeftWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { top: 10, right: 10,  borderTopWidth: 1.5,    borderRightWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { bottom: 10, left: 10,  borderBottomWidth: 1.5, borderLeftWidth: 1.5 }]} />
       <View pointerEvents="none" style={[base, { bottom: 10, right: 10, borderBottomWidth: 1.5, borderRightWidth: 1.5 }]} />
     </>
   );
 }
 
-// ─── Task 2 helpers: animated light trail ────────────────────────────────────
+// ─── Animated light trail ─────────────────────────────────────────────────────
 
 function CardTrail({ color }: { color: string }) {
   const dotAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.loop(
-      Animated.timing(dotAnim, {
-        toValue: 1,
-        duration: 2200,
-        useNativeDriver: true,
-      })
+      Animated.timing(dotAnim, { toValue: 1, duration: 2200, useNativeDriver: true })
     ).start();
   }, [dotAnim]);
 
-  const translateX = dotAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 140],
-  });
+  const translateX = dotAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140] });
 
   return (
-    <View
-      pointerEvents="none"
-      style={[styles.trailLine, { backgroundColor: color + '4D' }]}
-    >
+    <View pointerEvents="none" style={[styles.trailLine, { backgroundColor: color + '4D' }]}>
       <Animated.View
-        style={[
-          styles.trailDot,
-          {
-            backgroundColor: color,
-            shadowColor: color,
-            transform: [{ translateX }],
-          },
-        ]}
+        style={[styles.trailDot, { backgroundColor: color, shadowColor: color, transform: [{ translateX }] }]}
       />
     </View>
   );
 }
 
-// ─── Task 2: Feature card ─────────────────────────────────────────────────────
+// ─── Feature card ─────────────────────────────────────────────────────────────
 
 function FeatureCardItem({ card }: { card: FeatureCard }) {
   const navigation = useNavigation<NavProp>();
@@ -213,26 +256,13 @@ function FeatureCardItem({ card }: { card: FeatureCard }) {
       onPress={() => navigation.navigate(card.id)}
       style={[
         styles.cardWrapper,
-        {
-          shadowColor: card.color,
-          shadowOffset: { width: 0, height: 0 },
-          shadowRadius: 16,
-          shadowOpacity: 0.4,
-          elevation: 10,
-        },
+        { shadowColor: card.color, shadowOffset: { width: 0, height: 0 }, shadowRadius: 16, shadowOpacity: 0.4, elevation: 10 },
       ]}
     >
-      <GlassPanel
-        style={[
-          styles.card,
-          card.sos ? styles.cardSos : { backgroundColor: 'rgba(2,6,16,0.85)' },
-          { borderColor: card.color + '66', borderRadius: 24 },
-        ]}
-      >
-        <CardGridTexture color={card.color} />
+      <View style={[styles.card, card.sos ? styles.cardSos : null, { borderColor: card.color + '66' }]}>
+        <CardDiagonals color={card.color} />
         <CardCorners color={card.color} />
 
-        {/* SOS pulsing border overlay */}
         {card.sos && (
           <Animated.View
             pointerEvents="none"
@@ -240,59 +270,26 @@ function FeatureCardItem({ card }: { card: FeatureCard }) {
           />
         )}
 
-        <View style={styles.cardInner}>
-          <NeonIcon name={card.icon} color={card.color} size={36} />
+        <View style={[
+          styles.cardInner,
+          { shadowColor: card.color, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12, shadowOpacity: 0.5, elevation: 8 },
+        ]}>
+          {/* Top shine */}
+          <View pointerEvents="none" style={styles.cardShine} />
+          <View style={{ shadowColor: card.color, shadowRadius: 16, shadowOpacity: 1, shadowOffset: { width: 0, height: 0 } }}>
+            <CardSvgIcon id={card.id} color={card.color} />
+          </View>
           <Text style={styles.cardName}>{card.label}</Text>
           <Text style={[styles.cardSub, { color: card.color + 'B3' }]}>{card.sublabel}</Text>
         </View>
 
         <CardTrail color={card.color} />
-      </GlassPanel>
+      </View>
     </Pressable>
   );
 }
 
-// ─── Task 3: Perspective grid background ─────────────────────────────────────
-// Horizontal lines denser at top (horizon) spreading toward bottom — floor depth illusion
-
-const GRID_ROWS = [4, 11, 20, 31, 44, 59, 74, 88, 97];
-
-function PerspectiveGrid() {
-  return (
-    <View style={styles.perspGrid} pointerEvents="none">
-      {GRID_ROWS.map((pct, i) => (
-        <View
-          key={i}
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: `${pct}%`,
-            height: 1,
-            backgroundColor: `rgba(0,245,255,${(0.035 + i * 0.008).toFixed(3)})`,
-          }}
-        />
-      ))}
-      {/* Fanned vertical lines — rotated from bottom-center */}
-      {[-60, -42, -26, -12, 0, 12, 26, 42, 60].map((angle, i) => (
-        <View
-          key={`f${i}`}
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            alignSelf: 'center',
-            width: 1,
-            height: '120%',
-            backgroundColor: 'rgba(0,245,255,0.04)',
-            transform: [{ rotate: `${angle}deg` }],
-          }}
-        />
-      ))}
-    </View>
-  );
-}
-
-// ─── Task 4: Active festival banner ──────────────────────────────────────────
+// ─── Active festival banner ───────────────────────────────────────────────────
 
 function ActiveBanner() {
   const activeFestival = useFestivalStore((s) => s.activeFestival);
@@ -300,7 +297,6 @@ function ActiveBanner() {
 
   return (
     <GlassPanel style={styles.banner}>
-      {/* Cyan left accent border */}
       <View style={styles.bannerAccent} />
       <View style={styles.bannerInner}>
         <View style={styles.bannerDot} />
@@ -318,7 +314,7 @@ function ActiveBanner() {
 export default function HomeScreen() {
   return (
     <ScreenBackground>
-      <HudHeader title="TRAVEL RAVERS" gpsStatus="LOCKED" batteryPercent={82} />
+      <HudHeader title="" gpsStatus="LOCKED" batteryPercent={82} />
       <MeshStatusBar />
       <ScrollView
         style={styles.scroll}
@@ -327,12 +323,7 @@ export default function HomeScreen() {
       >
         <HeroHeader />
         <ActiveBanner />
-        <PerspectiveGrid />
-
-        {/* Task 4: Section label */}
         <Text style={styles.sectionLabel}>{'// SELECT MODULE'}</Text>
-
-        {/* Task 4: Card grid */}
         <View style={styles.grid}>
           {FEATURE_CARDS.map((card) => (
             <FeatureCardItem key={card.id} card={card} />
@@ -346,53 +337,41 @@ export default function HomeScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // Task 1: Hero
+  // Hero
   hero: {
     height: HERO_HEIGHT,
-    marginHorizontal: 12,
-    marginTop: 10,
-    marginBottom: 8,
+    marginHorizontal: 0,
+    marginTop: 0,
+    paddingBottom: 8,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
   scanClip: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     overflow: 'hidden',
   },
   scanLine: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    top: 0, left: 0, right: 0,
     height: 2,
     backgroundColor: 'rgba(0,245,255,0.18)',
   },
-  heroEyebrow: {
-    fontFamily: FONT_MONO,
-    fontSize: 9,
-    color: COLOR_CYAN,
-    letterSpacing: 3,
-    opacity: 0.6,
-  },
   heroLogo: {
-    width: 280,
-    height: 100,
-    shadowColor: '#00f5ff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 20,
-    shadowOpacity: 0.8,
-    elevation: 10,
+    width: '100%',
+    height: 180,
+    marginLeft: -10,
+    marginBottom: -15,
   },
   heroTagline: {
     fontFamily: FONT_MONO,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
+    color: COLOR_CYAN,
     letterSpacing: 1,
+    textShadowColor: COLOR_CYAN,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   heroStatusRow: {
     flexDirection: 'row',
@@ -403,8 +382,8 @@ const styles = StyleSheet.create({
   heroStatusItem: {
     fontFamily: FONT_MONO,
     fontSize: 8,
-    color: COLOR_CYAN,
-    opacity: 0.4,
+    color: '#ff00ff',
+    opacity: 0.7,
     letterSpacing: 0.5,
   },
   heroStatusDiv: {
@@ -413,16 +392,7 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.2)',
   },
 
-  // Task 3: Perspective grid
-  perspGrid: {
-    width: '100%',
-    height: 100,
-    backgroundColor: '#010408',
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-
-  // Task 4: Section label
+  // Section label
   sectionLabel: {
     fontFamily: FONT_MONO,
     fontSize: 9,
@@ -434,7 +404,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Task 4: Grid layout
+  // Scroll
   scroll: {
     flex: 1,
     width: '100%',
@@ -442,6 +412,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 28,
   },
+
+  // Grid
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -451,30 +423,29 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
-  // Task 2: Card
+  // Cards
   cardWrapper: {
     width: '47%',
     aspectRatio: 1,
     minHeight: 160,
-    borderRadius: 24,
+    borderRadius: 22,
     overflow: 'hidden',
   },
   card: {
     flex: 1,
-    borderRadius: 24,
+    borderRadius: 22,
     overflow: 'hidden',
+    borderWidth: 1,
+    backgroundColor: 'rgba(1,4,12,0.95)',
   },
   cardSos: {
-    backgroundColor: 'rgba(30,4,4,0.90)',
+    backgroundColor: 'rgba(20,2,4,0.95)',
   },
   sosPulseOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     borderWidth: 1.5,
-    borderRadius: 24,
+    borderRadius: 22,
   },
   cardInner: {
     flex: 1,
@@ -483,8 +454,17 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 10,
     paddingVertical: 20,
-    borderRadius: 24,
+    borderRadius: 22,
     overflow: 'hidden',
+    backgroundColor: 'rgba(8,18,38,0.75)',
+  },
+  cardShine: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   cardName: {
     fontFamily: FONT_DISPLAY,
@@ -501,9 +481,7 @@ const styles = StyleSheet.create({
   },
   trailLine: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 0, left: 0, right: 0,
     height: 1,
     overflow: 'hidden',
   },
@@ -516,7 +494,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  // Task 4: Active banner
+  // Active banner
   banner: {
     marginHorizontal: 12,
     marginTop: 10,
