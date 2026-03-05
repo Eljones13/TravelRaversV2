@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef } from 'react';
 import {
   Animated,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +14,6 @@ import { useFestivalStore } from '../../stores/festivalStore';
 import {
   COLOR_CYAN,
   COLOR_GREEN,
-  COLOR_MAGENTA,
   FONT_DISPLAY,
   FONT_MONO,
 } from '../../theme/tokens';
@@ -96,12 +96,14 @@ function HeroHeader() {
 
       <Text style={styles.heroEyebrow}>{'// OFFLINE FESTIVAL OS'}</Text>
 
-      <View style={styles.heroTitleRow}>
-        <Text style={styles.heroTitleCyan}>TRAVEL </Text>
-        <Text style={styles.heroTitleMagenta}>RAVERS</Text>
-      </View>
+      <Image
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        source={require('../../../assets/logo-v2.png')}
+        style={styles.heroLogo}
+        resizeMode="contain"
+      />
 
-      <Text style={styles.heroTagline}>PACK · PLAN · PARTY · NO SIGNAL REQUIRED</Text>
+      <Text style={styles.heroTagline}>PACK · PLAN · PARTY</Text>
 
       <View style={styles.heroStatusRow}>
         <Text style={styles.heroStatusItem}>CREW_SYNC: ACTIVE</Text>
@@ -377,27 +379,14 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     opacity: 0.6,
   },
-  heroTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  heroTitleCyan: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: 32,
-    letterSpacing: 2,
-    color: COLOR_CYAN,
-    textShadowColor: COLOR_CYAN,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
-  },
-  heroTitleMagenta: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: 32,
-    letterSpacing: 2,
-    color: COLOR_MAGENTA,
-    textShadowColor: COLOR_MAGENTA,
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+  heroLogo: {
+    width: 280,
+    height: 100,
+    shadowColor: '#00f5ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 20,
+    shadowOpacity: 0.8,
+    elevation: 10,
   },
   heroTagline: {
     fontFamily: FONT_MONO,

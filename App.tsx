@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Orbitron_700Bold } from '@expo-google-fonts/orbitron';
 import { ShareTechMono_400Regular } from '@expo-google-fonts/share-tech-mono';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BottomTabBar, createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import EventsScreen from './src/components/screens/EventsScreen';
 import HomeScreen from './src/components/screens/HomeScreen';
 import RadarScreen from './src/components/screens/RadarScreen';
@@ -29,6 +29,21 @@ const MapScreen   = () => <PlaceholderScreen name="MAP" />;
 const TimesScreen = () => <PlaceholderScreen name="TIMES" />;
 const KitScreen   = () => <PlaceholderScreen name="KIT" />;
 const SosScreen   = () => <PlaceholderScreen name="SOS" />;
+
+// ─── Logo strip above tab bar ─────────────────────────────────────────────────
+
+function LogoStrip() {
+  return (
+    <View style={styles.logoStrip}>
+      <Image
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        source={require('./src/assets/logo-v2.png')}
+        style={styles.logoStripImage}
+        resizeMode="contain"
+      />
+    </View>
+  );
+}
 
 // ─── Tab icon map ─────────────────────────────────────────────────────────────
 
@@ -64,6 +79,12 @@ export default function App() {
     <NavigationContainer>
       <StatusBar style="light" />
       <Tab.Navigator
+        tabBar={(props) => (
+          <View>
+            <LogoStrip />
+            <BottomTabBar {...props} />
+          </View>
+        )}
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarStyle: styles.tabBar,
@@ -95,6 +116,22 @@ const styles = StyleSheet.create({
   loading: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  logoStrip: {
+    backgroundColor: 'rgba(2,6,14,0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,245,255,1)',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  logoStripImage: {
+    width: 120,
+    height: 30,
+    shadowColor: '#00f5ff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 10,
+    shadowOpacity: 0.9,
+    elevation: 8,
   },
   tabBar: {
     backgroundColor: 'rgba(2,6,14,0.95)',
