@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Circle, Line, Path, Rect, Svg } from 'react-native-svg';
+import { Circle, Defs, Line, Path, RadialGradient, Rect, Stop, Svg } from 'react-native-svg';
 import { useFestivalStore } from '../../stores/festivalStore';
 import {
   COLOR_CYAN,
@@ -19,6 +19,7 @@ import {
   FONT_MONO,
 } from '../../theme/tokens';
 import GlassPanel from '../shared/GlassPanel';
+import GlowBorderCard from '../shared/GlowBorderCard';
 import HudHeader from '../shared/HudHeader';
 import MeshStatusBar from '../shared/MeshStatusBar';
 import ScreenBackground from '../shared/ScreenBackground';
@@ -26,32 +27,32 @@ import ScreenBackground from '../shared/ScreenBackground';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type RootTabParamList = {
-  HOME:   undefined;
+  HOME: undefined;
   EVENTS: undefined;
-  RADAR:  undefined;
-  MAP:    undefined;
-  TIMES:  undefined;
-  KIT:    undefined;
-  SOS:    undefined;
+  RADAR: undefined;
+  MAP: undefined;
+  TIMES: undefined;
+  KIT: undefined;
+  SOS: undefined;
 };
 
 type NavProp = BottomTabNavigationProp<RootTabParamList>;
 
 interface FeatureCard {
-  id:       keyof RootTabParamList;
-  label:    string;
+  id: keyof RootTabParamList;
+  label: string;
   sublabel: string;
-  color:    string;
-  sos?:     boolean;
+  color: string;
+  sos?: boolean;
 }
 
 const FEATURE_CARDS: FeatureCard[] = [
-  { id: 'EVENTS', label: 'EVENTS',    sublabel: 'Pick Your Festival', color: '#00f5ff' },
-  { id: 'RADAR',  label: 'RADAR',     sublabel: 'Find Your Squad',    color: '#ff00ff' },
-  { id: 'MAP',    label: 'MAP',       sublabel: 'Festival Map',       color: '#00ff88' },
-  { id: 'TIMES',  label: 'TIMETABLE', sublabel: 'Set Schedule',       color: '#ffcc00' },
-  { id: 'KIT',    label: 'KIT',       sublabel: 'Packing List',       color: '#ff8c00' },
-  { id: 'SOS',    label: 'SOS',       sublabel: 'Emergency',          color: '#ff0040', sos: true },
+  { id: 'EVENTS', label: 'EVENTS', sublabel: 'Pick Your Festival', color: '#00f5ff' },
+  { id: 'RADAR', label: 'RADAR', sublabel: 'Find Your Squad', color: '#ff00ff' },
+  { id: 'MAP', label: 'MAP', sublabel: 'Festival Map', color: '#00ff88' },
+  { id: 'TIMES', label: 'TIMETABLE', sublabel: 'Set Schedule', color: '#ffcc00' },
+  { id: 'KIT', label: 'KIT', sublabel: 'Packing List', color: '#ff8c00' },
+  { id: 'SOS', label: 'SOS', sublabel: 'Emergency', color: '#ff0040', sos: true },
 ];
 
 // ─── SVG card icons ───────────────────────────────────────────────────────────
@@ -64,16 +65,16 @@ function CardSvgIcon({ id, color }: { id: keyof RootTabParamList; color: string 
         <Svg width={40} height={40} viewBox="0 0 40 40">
           <Circle cx={20} cy={34} r={2} fill={color} />
           <Path d="M13 28 Q20 21 27 28" stroke={color} strokeWidth={s} fill="none" strokeLinecap="round" />
-          <Path d="M8 23 Q20 11 32 23"  stroke={color} strokeWidth={s} fill="none" strokeLinecap="round" />
-          <Path d="M4 18 Q20 2 36 18"   stroke={color} strokeWidth={s} fill="none" strokeLinecap="round" />
+          <Path d="M8 23 Q20 11 32 23" stroke={color} strokeWidth={s} fill="none" strokeLinecap="round" />
+          <Path d="M4 18 Q20 2 36 18" stroke={color} strokeWidth={s} fill="none" strokeLinecap="round" />
         </Svg>
       );
     case 'RADAR':
       return (
         <Svg width={40} height={40} viewBox="0 0 40 40">
           <Path d="M20 4 L36 20 L20 36 L4 20 Z" stroke={color} strokeWidth={s} fill="none" />
-          <Line x1={20} y1={4}  x2={20} y2={36} stroke={color} strokeWidth={1} opacity={0.5} />
-          <Line x1={4}  y1={20} x2={36} y2={20} stroke={color} strokeWidth={1} opacity={0.5} />
+          <Line x1={20} y1={4} x2={20} y2={36} stroke={color} strokeWidth={1} opacity={0.5} />
+          <Line x1={4} y1={20} x2={36} y2={20} stroke={color} strokeWidth={1} opacity={0.5} />
           <Circle cx={20} cy={20} r={3} stroke={color} strokeWidth={s} fill="none" />
         </Svg>
       );
@@ -88,9 +89,7 @@ function CardSvgIcon({ id, color }: { id: keyof RootTabParamList; color: string 
       return (
         <Svg width={40} height={40} viewBox="0 0 40 40">
           <Circle cx={20} cy={20} r={15} stroke={color} strokeWidth={s} fill="none" />
-          {/* Hour hand → 10 o'clock */}
           <Line x1={20} y1={20} x2={12} y2={12} stroke={color} strokeWidth={s} strokeLinecap="round" />
-          {/* Minute hand → 2 o'clock */}
           <Line x1={20} y1={20} x2={28} y2={12} stroke={color} strokeWidth={s} strokeLinecap="round" />
           <Circle cx={20} cy={20} r={1.5} fill={color} />
         </Svg>
@@ -118,7 +117,7 @@ function CardSvgIcon({ id, color }: { id: keyof RootTabParamList; color: string 
 
 // ─── Hero header ──────────────────────────────────────────────────────────────
 
-const HERO_HEIGHT = 240;
+const HERO_HEIGHT = 140; // Reduced height to remove dead space
 
 function HeroHeader() {
   const scanAnim = useRef(new Animated.Value(0)).current;
@@ -134,7 +133,7 @@ function HeroHeader() {
   }, [scanAnim]);
 
   const scanY = scanAnim.interpolate({
-    inputRange:  [0, 1],
+    inputRange: [0, 1],
     outputRange: [-2, HERO_HEIGHT],
   });
 
@@ -205,33 +204,11 @@ function CardCorners({ color }: { color: string }) {
   const base = { position: 'absolute' as const, width: 14, height: 14, borderColor };
   return (
     <>
-      <View pointerEvents="none" style={[base, { top: 10, left: 10,   borderTopWidth: 1.5,    borderLeftWidth: 1.5 }]} />
-      <View pointerEvents="none" style={[base, { top: 10, right: 10,  borderTopWidth: 1.5,    borderRightWidth: 1.5 }]} />
-      <View pointerEvents="none" style={[base, { bottom: 10, left: 10,  borderBottomWidth: 1.5, borderLeftWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { top: 10, left: 10, borderTopWidth: 1.5, borderLeftWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { top: 10, right: 10, borderTopWidth: 1.5, borderRightWidth: 1.5 }]} />
+      <View pointerEvents="none" style={[base, { bottom: 10, left: 10, borderBottomWidth: 1.5, borderLeftWidth: 1.5 }]} />
       <View pointerEvents="none" style={[base, { bottom: 10, right: 10, borderBottomWidth: 1.5, borderRightWidth: 1.5 }]} />
     </>
-  );
-}
-
-// ─── Animated light trail ─────────────────────────────────────────────────────
-
-function CardTrail({ color }: { color: string }) {
-  const dotAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(dotAnim, { toValue: 1, duration: 2200, useNativeDriver: true })
-    ).start();
-  }, [dotAnim]);
-
-  const translateX = dotAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140] });
-
-  return (
-    <View pointerEvents="none" style={[styles.trailLine, { backgroundColor: color + '4D' }]}>
-      <Animated.View
-        style={[styles.trailDot, { backgroundColor: color, shadowColor: color, transform: [{ translateX }] }]}
-      />
-    </View>
   );
 }
 
@@ -246,7 +223,7 @@ function FeatureCardItem({ card }: { card: FeatureCard }) {
     Animated.loop(
       Animated.sequence([
         Animated.timing(sosPulse, { toValue: 0.15, duration: 700, useNativeDriver: true }),
-        Animated.timing(sosPulse, { toValue: 1,    duration: 700, useNativeDriver: true }),
+        Animated.timing(sosPulse, { toValue: 1, duration: 700, useNativeDriver: true }),
       ])
     ).start();
   }, [sosPulse, card.sos]);
@@ -256,35 +233,62 @@ function FeatureCardItem({ card }: { card: FeatureCard }) {
       onPress={() => navigation.navigate(card.id)}
       style={[
         styles.cardWrapper,
-        { shadowColor: card.color, shadowOffset: { width: 0, height: 0 }, shadowRadius: 16, shadowOpacity: 0.4, elevation: 10 },
+        {
+          shadowColor: card.color,
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: 16,
+          shadowOpacity: 0.4,
+          elevation: 10,
+        },
       ]}
     >
-      <View style={[styles.card, card.sos ? styles.cardSos : null, { borderColor: card.color + '66' }]}>
-        <CardDiagonals color={card.color} />
-        <CardCorners color={card.color} />
+      <GlowBorderCard
+        color={card.color}
+        style={styles.card}
+        contentStyle={styles.cardContentBase}
+      >
+        <View style={styles.cardInner}>
+          <CardDiagonals color={card.color} />
+          <CardCorners color={card.color} />
 
-        {card.sos && (
-          <Animated.View
-            pointerEvents="none"
-            style={[styles.sosPulseOverlay, { opacity: sosPulse, borderColor: card.color }]}
-          />
-        )}
+          {/* Inner radial glow from centre in card color at 8% opacity */}
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Svg height="100%" width="100%">
+              <Defs>
+                <RadialGradient id={`glow-${card.id}`} cx="50%" cy="50%" rx="50%" ry="50%">
+                  <Stop offset="0%" stopColor={card.color} stopOpacity="0.08" />
+                  <Stop offset="100%" stopColor={card.color} stopOpacity="0" />
+                </RadialGradient>
+              </Defs>
+              <Rect x="0" y="0" width="100%" height="100%" fill={`url(#glow-${card.id})`} />
+            </Svg>
+          </View>
 
-        <View style={[
-          styles.cardInner,
-          { shadowColor: card.color, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12, shadowOpacity: 0.5, elevation: 8 },
-        ]}>
-          {/* Top shine */}
-          <View pointerEvents="none" style={styles.cardShine} />
+          {/* Top shine line: rgba(255,255,255,0.18) */}
+          <View style={styles.cardTopShine} pointerEvents="none" />
+
+          {/* Bottom edge glow line in cardColor */}
+          <View style={[styles.cardBottomGlow, { backgroundColor: card.color, shadowColor: card.color }]} pointerEvents="none" />
+
+          {card.sos && (
+            <>
+              {/* Adding subtle dark red overlay if it's SOS inside the glass */}
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255,0,0,0.05)' }]} pointerEvents="none" />
+
+              <Animated.View
+                pointerEvents="none"
+                style={[styles.sosPulseOverlay, { opacity: sosPulse, borderColor: card.color }]}
+              />
+            </>
+          )}
+
           <View style={{ shadowColor: card.color, shadowRadius: 16, shadowOpacity: 1, shadowOffset: { width: 0, height: 0 } }}>
             <CardSvgIcon id={card.id} color={card.color} />
           </View>
           <Text style={styles.cardName}>{card.label}</Text>
           <Text style={[styles.cardSub, { color: card.color + 'B3' }]}>{card.sublabel}</Text>
         </View>
-
-        <CardTrail color={card.color} />
-      </View>
+      </GlowBorderCard>
     </Pressable>
   );
 }
@@ -342,10 +346,10 @@ const styles = StyleSheet.create({
     height: HERO_HEIGHT,
     marginHorizontal: 0,
     marginTop: 0,
-    paddingBottom: 8,
+    paddingBottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 0, // Reduced space
   },
   scanClip: {
     position: 'absolute',
@@ -360,9 +364,9 @@ const styles = StyleSheet.create({
   },
   heroLogo: {
     width: '100%',
-    height: 180,
+    height: 90, // Adjusted height tighter to remove outer transparent pixels dead space
     marginLeft: -10,
-    marginBottom: -15,
+    marginBottom: 0,
   },
   heroTagline: {
     fontFamily: FONT_MONO,
@@ -400,8 +404,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     letterSpacing: 1,
     marginHorizontal: 12,
-    marginBottom: 10,
-    marginTop: 4,
+    marginBottom: 8,
+    marginTop: 0, // removed margin top to kill dead space
   },
 
   // Scroll
@@ -435,17 +439,11 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 22,
     overflow: 'hidden',
-    borderWidth: 1,
-    backgroundColor: 'rgba(1,4,12,0.95)',
   },
-  cardSos: {
-    backgroundColor: 'rgba(20,2,4,0.95)',
-  },
-  sosPulseOverlay: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0, bottom: 0,
-    borderWidth: 1.5,
+  cardContentBase: {
+    flex: 1,
     borderRadius: 22,
+    overflow: 'hidden',
   },
   cardInner: {
     flex: 1,
@@ -456,15 +454,36 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     borderRadius: 22,
     overflow: 'hidden',
-    backgroundColor: 'rgba(8,18,38,0.75)',
+    backgroundColor: 'rgba(6,16,36,0.80)',
   },
-  cardShine: {
+  sosPulseOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    borderWidth: 1.5,
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  cardTopShine: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    zIndex: 10,
+  },
+  cardBottomGlow: {
+    position: 'absolute',
+    bottom: 0,
+    left: '10%',
+    right: '10%',
+    height: 1,
+    opacity: 0.4,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 4,
+    shadowOpacity: 1,
+    elevation: 2,
+    zIndex: 10,
   },
   cardName: {
     fontFamily: FONT_DISPLAY,
@@ -479,26 +498,12 @@ const styles = StyleSheet.create({
     fontSize: 9,
     textAlign: 'center',
   },
-  trailLine: {
-    position: 'absolute',
-    bottom: 0, left: 0, right: 0,
-    height: 1,
-    overflow: 'hidden',
-  },
-  trailDot: {
-    width: 12,
-    height: 1,
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 4,
-    shadowOpacity: 1,
-    elevation: 3,
-  },
 
   // Active banner
   banner: {
     marginHorizontal: 12,
-    marginTop: 10,
-    marginBottom: 2,
+    marginTop: 0,
+    marginBottom: 8,
     flexDirection: 'row',
     overflow: 'hidden',
   },

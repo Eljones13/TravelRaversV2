@@ -6,6 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Svg, Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { Festival } from '../../data/festivals';
 import { FilterOption, useFestivalStore } from '../../stores/festivalStore';
 import {
@@ -25,7 +26,7 @@ import ScreenBackground from '../shared/ScreenBackground';
 const FILTERS: FilterOption[] = ['ALL', 'UK', 'EU', 'CARNIVAL', 'CONCERT'];
 
 function FilterBar() {
-  const activeFilter    = useFestivalStore((s) => s.activeFilter);
+  const activeFilter = useFestivalStore((s) => s.activeFilter);
   const setActiveFilter = useFestivalStore((s) => s.setActiveFilter);
 
   return (
@@ -83,8 +84,8 @@ function FestivalCard({ festival }: { festival: Festival }) {
           {
             shadowColor: accent,
             shadowOffset: { width: 0, height: 0 },
-            shadowRadius: 12,
-            shadowOpacity: 0.35,
+            shadowRadius: 16,
+            shadowOpacity: 0.4,
             elevation: 10,
           },
         ]}
@@ -92,13 +93,27 @@ function FestivalCard({ festival }: { festival: Festival }) {
         <GlassPanel
           style={[
             styles.card,
-            { borderColor: 'rgba(255,255,255,0.10)' },
+            { borderColor: accent + '40' }, // 25% opacity matching hud-design.md
           ]}
         >
+          {/* Inner radial glow in cardColor at 8% opacity */}
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
+            <Svg height="100%" width="100%">
+              <Defs>
+                <RadialGradient id={`glow-${festival.id}`} cx="50%" cy="50%" rx="50%" ry="50%">
+                  <Stop offset="0%" stopColor={accent} stopOpacity="0.08" />
+                  <Stop offset="100%" stopColor={accent} stopOpacity="0" />
+                </RadialGradient>
+              </Defs>
+              <Rect x="0" y="0" width="100%" height="100%" fill={`url(#glow-${festival.id})`} />
+            </Svg>
+          </View>
+
           {/* Task 1: Top shine streak */}
           <View style={styles.shineTop} pointerEvents="none" />
-          {/* Task 1: Bottom shine streak */}
-          <View style={styles.shineBottom} pointerEvents="none" />
+
+          {/* Task 1: Bottom edge glow line */}
+          <View style={[styles.shineBottom, { backgroundColor: accent, shadowColor: accent }]} pointerEvents="none" />
 
           {/* Task 3: Left accent bar with stronger glow */}
           <View style={[
@@ -266,6 +281,7 @@ const styles = StyleSheet.create({
   // Card pressable wrapper
   cardWrapper: {
     zIndex: 1,
+    borderRadius: 22,
   },
 
   // GlassPanel inner (Task 1)
@@ -273,6 +289,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     overflow: 'hidden',
     width: '100%',
+    borderRadius: 22,
+    backgroundColor: 'rgba(6,16,36,0.80)',
   },
 
   // Shine streaks (Task 1)
@@ -281,17 +299,21 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 1.5,
+    height: 1,
     backgroundColor: 'rgba(255,255,255,0.18)',
     zIndex: 2,
   },
   shineBottom: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    left: '10%',
+    right: '10%',
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    opacity: 0.4,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 4,
+    shadowOpacity: 1,
+    elevation: 2,
     zIndex: 2,
   },
 
@@ -322,7 +344,7 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     paddingVertical: 12,
     gap: 6,
-    zIndex: 2,
+    zIndex: 3, // higher than absolute items
   },
   festivalName: {
     fontFamily: FONT_DISPLAY,
@@ -353,7 +375,7 @@ const styles = StyleSheet.create({
   },
   genreTag: {
     borderWidth: 1,
-    borderRadius: 4,
+    borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
