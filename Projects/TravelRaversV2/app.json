@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Travel Ravers",
+    "slug": "travel-ravers",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#03060f"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.travelravers.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#03060f"
+      },
+      "package": "com.travelravers.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "scheme": "travelravers"
+  }
+}
