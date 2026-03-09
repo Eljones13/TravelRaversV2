@@ -17,6 +17,7 @@ import {
   Animated,
   Dimensions,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Defs, Pattern, Circle, Rect, Path } from 'react-native-svg';
@@ -85,13 +86,24 @@ const IconSquad: React.FC<{ size: number; color: string }> = ({ size, color }) =
   </Svg>
 );
 
-// 5 secondary modules — accessed from SQUAD tab
+const IconKit: React.FC<{ size: number; color: string }> = ({ size, color }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="8" width="18" height="13" rx="2" stroke={color} strokeWidth="1.5" />
+    <Path d="M8 8V6C8 4.34 9.34 3 11 3H13C14.66 3 16 4.34 16 6V8" stroke={color} strokeWidth="1.2" />
+    <Rect x="10" y="13" width="4" height="3" rx="1" fill={color} opacity="0.6" />
+    <Rect x="6" y="13" width="2" height="1.5" rx="0.5" fill={color} opacity="0.4" />
+    <Rect x="16" y="13" width="2" height="1.5" rx="0.5" fill={color} opacity="0.4" />
+  </Svg>
+);
+
+// 6 secondary modules — SQUAD tab
 const SECONDARY_MODULES: SecondaryModule[] = [
   { id: 'RADAR', label: 'Radar', sublabel: 'Nearby Festivals', screen: 'Radar', Icon: IconRadar },
   { id: 'WEATHER', label: 'Weather', sublabel: 'Conditions & Rain', screen: 'Weather', Icon: IconWeather },
   { id: 'PIXELPARTY', label: 'Pixel Party', sublabel: 'Shared Albums', screen: 'PixelParty', Icon: IconPixelParty },
   { id: 'BUDGET', label: 'Budget', sublabel: 'Split Expenses', screen: 'Budget', Icon: IconBudget },
   { id: 'SQUAD', label: 'Squad', sublabel: 'Build Your Crew', screen: 'SquadSetup', Icon: IconSquad },
+  { id: 'KIT', label: 'Kit', sublabel: 'Pack Checklist', screen: 'Kit', Icon: IconKit },
 ];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -201,6 +213,15 @@ export const SquadPanelScreen: React.FC<SquadPanelScreenProps> = ({ navigation }
           </View>
         </View>
 
+        {/* ── SOS Backup Banner ── */}
+        <TouchableOpacity
+          style={styles.sosBanner}
+          onPress={() => navigation.navigate('SOS' as any)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.sosBannerText}>⚠  SOS / WELFARE →</Text>
+        </TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -298,7 +319,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  // ── Module Grid ──
+  // ── Module Grid ── (3-column for 6 items)
   moduleGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -360,6 +381,29 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 2,
     paddingHorizontal: 8,
+  },
+
+  // SOS banner
+  sosBanner: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    backgroundColor: 'rgba(255,51,68,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,51,68,0.45)',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    ...Platform.select({
+      web: { boxShadow: '0 0 10px rgba(255,51,68,0.2)' } as any,
+      default: { shadowColor: '#FF3344', shadowRadius: 8, shadowOpacity: 0.2, shadowOffset: { width: 0, height: 0 } },
+    }),
+  },
+  sosBannerText: {
+    color: '#FF3344',
+    fontSize: 12,
+    fontFamily: 'Orbitron_700Bold',
+    letterSpacing: 3,
   },
 
   // Corner brackets

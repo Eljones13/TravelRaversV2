@@ -54,6 +54,8 @@ export type SquadStackParamList = {
   PixelParty: undefined;
   Budget: undefined;
   SquadSetup: undefined;
+  Kit: undefined;
+  SOS: undefined;
 };
 
 export type RootTabParamList = {
@@ -102,6 +104,8 @@ function SquadStackNavigator(): React.ReactElement {
       <SquadStack.Screen name="PixelParty" component={PixelPartyScreen} />
       <SquadStack.Screen name="Budget" component={BudgetScreen} />
       <SquadStack.Screen name="SquadSetup" component={SquadSetupScreen} />
+      <SquadStack.Screen name="Kit" component={KitScreen} />
+      <SquadStack.Screen name="SOS" component={SOSScreen} />
     </SquadStack.Navigator>
   );
 }

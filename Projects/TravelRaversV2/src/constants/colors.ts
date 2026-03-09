@@ -30,22 +30,22 @@ export const Colors = {
   // Module accent colours (one per screen)
   module: {
     // ── PRIMARY (HomeScreen row 1 + 2) ──
-    EVENTS:     '#00FFFF',   // Cyan
-    MAP:        '#00FF88',   // Green
-    TIMETABLE:  '#FFB300',   // Amber
-    KIT:        '#FF8C00',   // Orange
-    SOS:        '#FF3344',   // Red
-    TRACK:      '#A855F7',   // Violet — TrackHunter
+    EVENTS: '#00FFFF',   // Cyan
+    MAP: '#00FF88',   // Green
+    TIMETABLE: '#FFB300',   // Amber
+    KIT: '#FF8C00',   // Orange
+    SOS: '#FF3344',   // Red
+    TRACK: '#A855F7',   // Violet — TrackHunter
     // ── SECONDARY (HomeScreen row 3 + 4) ──
-    RADAR:      '#CC00FF',   // Purple — Nearby Festivals discovery
-    WEATHER:    '#00BFFF',   // Sky Blue — Weather & conditions
+    RADAR: '#CC00FF',   // Purple — Nearby Festivals discovery
+    WEATHER: '#00BFFF',   // Sky Blue — Weather & conditions
     PIXELPARTY: '#FF2D78',   // Hot Pink — Disposable photo albums
-    BUDGET:     '#FFD700',   // Gold — Expense splitter
-    SQUAD:      '#9D4EDD',   // Medium Purple — Squad hub
-    SETUP:      '#38BDF8',   // Light Blue — Squad configuration
+    BUDGET: '#FFD700',   // Gold — Expense splitter
+    SQUAD: '#9D4EDD',   // Medium Purple — Squad hub
+    SETUP: '#38BDF8',   // Light Blue — Squad configuration
   },
 } as const;
 
 export type ModuleId = keyof typeof Colors.module;
 export type PrimaryModuleId = 'EVENTS' | 'MAP' | 'TIMETABLE' | 'KIT' | 'SOS' | 'TRACK';
-export type SecondaryModuleId = 'RADAR' | 'WEATHER' | 'PIXELPARTY' | 'BUDGET' | 'SQUAD' | 'SETUP';
+export type SecondaryModuleId = 'RADAR' | 'WEATHER' | 'PIXELPARTY' | 'BUDGET' | 'SQUAD' | 'SETUP' | 'KIT';
