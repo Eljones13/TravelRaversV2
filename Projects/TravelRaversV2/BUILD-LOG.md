@@ -5,9 +5,9 @@
 ---
 
 ## CURRENT STATUS
-Phase: 2 — Quick Win Features
-Next Session: 2-A (Weather Screen — full build)
-Build Health: Overnight polish session COMPLETE — app confirmed running from ~/Projects/TravelRaversV2
+Phase: 3 — Advanced Features (in progress)
+Next Session: Map / Radar UI review + continue Weather Screen
+Build Health: Web App Mapbox fallback fixed & EAS Android Build currently in queue
 
 ---
 
@@ -74,6 +74,16 @@ Paste this prompt into Claude Code:
 - Bottom accent strip: 75% opacity, 15% inset from edges
 - Corner brackets now have matching border-radius to container shape
 - Icon size: 28px for 3-col (was 32px for 2-col) — right proportion for smaller tile
+
+---
+
+### Session 1-D — Map and Radar Enhancements (2026-03-10)
+**Status:** COMPLETE
+- TacticalRadar.tsx: Fully implemented glowing, animated 360 sweeping radar natively via SVG and reanimated.
+- MapScreen.tsx: Fully converted to `@rnmapbox/maps` using offline-first approach and custom `mapbox://styles/eljones13/cltycb0zx00x801r8h44h0p4o` dark theme.
+- mapService.ts: Added offline region downloading functionality and conditional logic to support web environments without crashing.
+- Web support: Implemented graceful UI fallback for the `MapScreen` on web build since Mapbox limits web support in this configuration. Added `metro.config.js` aliases.
+- EAS Build: Initialized local project-specific repo to avoid permissions issues and sent `eas build --platform android` to queue.
 
 ---
 

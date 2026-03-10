@@ -1,41 +1,87 @@
-import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { GlowBorderCard } from '../components/GlowBorderCard';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Colors } from '../constants/colors';
+import TacticalRadar, { RadarPoint } from '../components/TacticalRadar';
 
-type RadarScreenProps = {
-  navigation: { goBack: () => void };
-};
+// MOCK DATA: Simulating squad members based on the concept image
+const MOCK_SQUAD: RadarPoint[] = [
+  { id: '1', name: 'SARAH', distance: 400, bearing: 45 },  // NE
+  { id: '2', name: 'MIKE', distance: 150, bearing: 180 },  // S
+  { id: '3', name: 'BASE CAMP', distance: 800, bearing: 270 }, // W
+];
 
-export const RadarScreen: React.FC<RadarScreenProps> = ({ navigation }) => {
+export const RadarScreen = () => {
+  const navigation = useNavigation();
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>RADAR</Text>
-        <Text style={styles.subtitle}>Nearby Festivals</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>‹ BACK</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>TACTICAL RADAR PULSE</Text>
+        <View style={{ width: 60 }} />
       </View>
-      <GlowBorderCard accentColor={Colors.module.RADAR}>
-        <Text style={styles.placeholder}>Session 1-B will style this screen.</Text>
-      </GlowBorderCard>
+
+      {/* Main Radar View */}
+      <View style={styles.radarContainer}>
+        <TacticalRadar points={MOCK_SQUAD} maxRange={1000} />
+      </View>
+
+      {/* Concept Info Text below Radar */}
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoText}>Concept: Visualizing friend locations via compass vectors and GPS lat/long.</Text>
+        <Text style={styles.infoText}>Benefit: Situational awareness at a glance. Find your squad without the grid.</Text>
+      </View>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.bg },
-  header: { paddingHorizontal: 16, paddingVertical: 16 },
-  title: {
-    color: Colors.module.RADAR,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-    ...Platform.select({
-      web: { textShadow: `0px 0px 6px ${Colors.module.RADAR}` } as any,
-      default: { textShadowColor: Colors.module.RADAR, textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 }
-    }),
+  container: {
+    flex: 1,
+    backgroundColor: Colors.bg,
   },
-  subtitle: { color: Colors.dim, fontSize: 10, letterSpacing: 2, marginTop: 2 },
-  placeholder: { color: Colors.dim, fontSize: 12 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(204, 0, 255, 0.2)', // Radar purple accent glow
+  },
+  backButton: {
+    padding: 8,
+  },
+  backButtonText: {
+    color: Colors.module.RADAR,
+    fontFamily: 'ShareTechMono-Regular',
+    fontSize: 16,
+  },
+  headerTitle: {
+    color: Colors.text,
+    fontFamily: 'Orbitron-Bold',
+    fontSize: 18,
+    letterSpacing: 2,
+  },
+  radarContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoContainer: {
+    padding: 24,
+    marginBottom: 40,
+  },
+  infoText: {
+    color: Colors.dim,
+    fontFamily: 'Rajdhani-Medium',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
 });

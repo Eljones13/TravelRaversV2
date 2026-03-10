@@ -10,7 +10,12 @@ import {
   StatusBar, Platform, Alert, Linking, AppState, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, Polygon, PROVIDER_GOOGLE } from 'react-native-maps';
+
+let Mapbox: any;
+if (Platform.OS !== 'web') {
+  Mapbox = require('@rnmapbox/maps').default;
+  Mapbox!.setAccessToken('sk.eyJ1IjoiZWxqb25lczEzIiwiYSI6ImNsdHljY3IzMzBldmsya2xkY2hxNmpnbDEifQ.placeholder_token');
+}
 import Svg, { Defs, Pattern, Circle, Rect, Polygon as SvgPolygon } from 'react-native-svg';
 import { Colors } from '../constants/colors';
 import {
@@ -75,7 +80,7 @@ const YouAreDot: React.FC = () => (
 
 // ── Main Screen ───────────────────────────────────────────
 export const MapScreen: React.FC<MapScreenProps> = ({ navigation }) => {
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const appState = useRef(AppState.currentState);
 
   const [userLocation, setUserLocation] = useState<LatLng | null>(null);
@@ -186,84 +191,120 @@ export const MapScreen: React.FC<MapScreenProps> = ({ navigation }) => {
 
       {/* ── Map ── */}
       <View style={cs.mapContainer}>
-        <MapView
-          ref={mapRef}
-          provider={PROVIDER_GOOGLE}
-          style={cs.map}
-          customMapStyle={DARK_MAP_STYLE}
-          initialRegion={{
-            ...DEFAULT_CENTER,
-            latitudeDelta: 0.015,
-            longitudeDelta: 0.015,
-          }}
-          onLongPress={handleLongPress}
-          onPress={() => setSelectedMarker(null)}
-          showsUserLocation={false}
-          showsCompass={false}
-          showsScale={false}
-          toolbarEnabled={false}
-          mapPadding={{ top: 0, right: 0, bottom: 0, left: 0 }}
-        >
-
-          {/* Festival zone overlays */}
-          {FESTIVAL_ZONES.map(zone => (
-            <Polygon
-              key={zone.id}
-              coordinates={zone.coordinates}
-              fillColor={zone.color + Math.round(zone.fillOpacity * 255).toString(16).padStart(2, '0')}
-              strokeColor={zone.color + 'AA'}
-              strokeWidth={1.5}
+        {Platform.OS === 'web' || !Mapbox ? (
+          <View style={[cs.map, { alignItems: 'center', justifyContent: 'center' }]}>
+            <Text style={{ color: Colors.cyan, fontFamily: 'Orbitron_700Bold', fontSize: 16 }}>MAPBOX NOT SUPPORTED ON WEB</Text>
+            <Text style={{ color: Colors.dim, fontFamily: 'ShareTechMono_400Regular', fontSize: 12, marginTop: 8 }}>Please test Map on a physical device.</Text>
+          </View>
+        ) : (
+          <Mapbox.MapView
+            style={cs.map}
+            styleURL="mapbox://styles/eljones13/cltycb0zx00x801r8h44h0p4o"
+            onLongPress={handleLongPress}
+            onPress={() => setSelectedMarker(null)}
+            compassEnabled={false}
+            scaleBarEnabled={false}
+            logoEnabled={false}
+            attributionEnabled={false}
+          >
+            <Mapbox.Camera
+              defaultSettings={{
+                centerCoordinate: [DEFAULT_CENTER.longitude, DEFAULT_CENTER.latitude],
+                zoomLevel: 14.5,
+              }}
             />
-          ))}
 
-          {/* POI markers */}
-          {filteredPOIs.map(poi => (
-            <Marker
-              key={poi.id}
-              coordinate={poi.coordinate}
-              onPress={() => handleTapMarker(poi)}
-              tracksViewChanges={false}
-            >
-              <GlowDot color={poi.color} />
-            </Marker>
-          ))}
+            {/* Festival zone overlays */}
+            {FESTIVAL_ZONES.map(zone => (
+              <Mapbox.ShapeSource
+                key={zone.id}
+                id={`source-${zone.id}`}
+                shape={{
+                  type: 'Feature',
+                  geometry: {
+                    type: 'Polygon',
+                    coordinates: [
+                      [
+                        ...zone.coordinates.map(c => [c.longitude, c.latitude]),
+                        [zone.coordinates[0].longitude, zone.coordinates[0].latitude] // Close the polygon
+                      ]
+                    ]
+                  },
+                  properties: {}
+                }}
+              >
+                <Mapbox.FillLayer
+                  id={`fill-${zone.id}`}
+                  style={{
+                    fillColor: zone.color,
+                    fillOpacity: zone.fillOpacity,
+                    fillOutlineColor: zone.color,
+                  }}
+                />
+                <Mapbox.LineLayer
+                  id={`line-${zone.id}`}
+                  style={{
+                    lineColor: zone.color,
+                    lineWidth: 1.5,
+                    lineOpacity: 0.6,
+                  }}
+                />
+              </Mapbox.ShapeSource>
+            ))}
 
-          {/* YOU ARE HERE */}
-          {userLocation && (
-            <Marker
-              coordinate={userLocation}
-              tracksViewChanges={false}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
-              <YouAreDot />
-            </Marker>
-          )}
+            {/* POI markers */}
+            {filteredPOIs.map(poi => (
+              <Mapbox.MarkerView
+                key={poi.id}
+                id={poi.id}
+                coordinate={[poi.coordinate.longitude, poi.coordinate.latitude]}
+              >
+                <TouchableOpacity onPress={() => handleTapMarker(poi)} activeOpacity={0.8}>
+                  <GlowDot color={poi.color} />
+                </TouchableOpacity>
+              </Mapbox.MarkerView>
+            ))}
 
-          {/* Squad meetup point */}
-          {meetupPoint && (
-            <Marker
-              coordinate={{ latitude: meetupPoint.latitude, longitude: meetupPoint.longitude }}
-              tracksViewChanges={false}
-              onPress={() => setSelectedMarker({
-                id: 'meetup',
-                name: 'SQUAD MEETUP',
-                type: 'MEETUP',
-                color: '#9D4EDD',
-                coordinate: { latitude: meetupPoint.latitude, longitude: meetupPoint.longitude },
-                distance: userLocation ? formatDistance(getDistanceMetres(userLocation, { latitude: meetupPoint.latitude, longitude: meetupPoint.longitude })) : undefined,
-              })}
-            >
-              <View style={cs.meetupMarker}>
-                <View style={[cs.meetupDot, Platform.select({
-                  web: { boxShadow: '0 0 12px #9D4EDD' } as any,
-                  default: { shadowColor: '#9D4EDD', shadowRadius: 8, shadowOpacity: 1, shadowOffset: { width: 0, height: 0 } },
-                }) as any]} />
-                <Text style={cs.meetupLabel}>MEETUP</Text>
-              </View>
-            </Marker>
-          )}
+            {/* YOU ARE HERE */}
+            {userLocation && (
+              <Mapbox.MarkerView
+                id="userLocation"
+                coordinate={[userLocation.longitude, userLocation.latitude]}
+              >
+                <YouAreDot />
+              </Mapbox.MarkerView>
+            )}
 
-        </MapView>
+            {/* Squad meetup point */}
+            {meetupPoint && (
+              <Mapbox.MarkerView
+                id="meetupPoint"
+                coordinate={[meetupPoint.longitude, meetupPoint.latitude]}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setSelectedMarker({
+                    id: 'meetup',
+                    name: 'SQUAD MEETUP',
+                    type: 'MEETUP',
+                    color: '#9D4EDD',
+                    coordinate: { latitude: meetupPoint.latitude, longitude: meetupPoint.longitude },
+                    distance: userLocation ? formatDistance(getDistanceMetres(userLocation, { latitude: meetupPoint.latitude, longitude: meetupPoint.longitude })) : undefined,
+                  })}
+                >
+                  <View style={cs.meetupMarker}>
+                    <View style={[cs.meetupDot, Platform.select({
+                      web: { boxShadow: '0 0 12px #9D4EDD' } as any,
+                      default: { shadowColor: '#9D4EDD', shadowRadius: 8, shadowOpacity: 1, shadowOffset: { width: 0, height: 0 } },
+                    }) as any]} />
+                    <Text style={cs.meetupLabel}>MEETUP</Text>
+                  </View>
+                </TouchableOpacity>
+              </Mapbox.MarkerView>
+            )}
+
+          </Mapbox.MapView>
+        )}
 
         {/* Download nudge if no offline pack */}
         {offlineLoaded === false && (

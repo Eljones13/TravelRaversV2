@@ -200,15 +200,47 @@ export async function saveMeetupPoint(coord: LatLng): Promise<void> {
     await AsyncStorage.setItem(MEETUP_KEY, JSON.stringify(point));
 }
 
+import { Platform } from 'react-native';
+
+let Mapbox: any;
+if (Platform.OS !== 'web') {
+    Mapbox = require('@rnmapbox/maps').default;
+}
 // ── Offline tile check ────────────────────────────────────
 
 export async function checkOfflineTiles(festivalId = 'glastonbury'): Promise<boolean> {
+    if (Platform.OS === 'web' || !Mapbox) return false;
     try {
-        const path = `${FileSystem.documentDirectory}tr_packs/${festivalId}/map_tiles.json`;
-        const info = await FileSystem.getInfoAsync(path);
-        return info.exists;
+        const pack = await Mapbox.offlineManager.getPack(`festival-${festivalId}`);
+        return pack !== null;
     } catch {
         return false;
+    }
+}
+
+// ── Download Offline Map (Call from Download Manager)─────
+export async function downloadOfflineRegion(festivalId = 'glastonbury'): Promise<void> {
+    if (Platform.OS === 'web' || !Mapbox) {
+        console.log('Offline download disabled on web.');
+        return;
+    }
+    console.log(`Starting Mapbox offline download for ${festivalId}`);
+    try {
+        await Mapbox.offlineManager.createPack({
+            name: `festival-${festivalId}`,
+            styleURL: 'mapbox://styles/eljones13/cltycb0zx00x801r8h44h0p4o',
+            bounds: [
+                [DEFAULT_CENTER.longitude - 0.05, DEFAULT_CENTER.latitude - 0.05], // SouthWest
+                [DEFAULT_CENTER.longitude + 0.05, DEFAULT_CENTER.latitude + 0.05]  // NorthEast
+            ],
+            minZoom: 10,
+            maxZoom: 18,
+        }, (pack: any, status: any) => {
+            console.log('Mapbox download progress:', status.percentage);
+        });
+        console.log('Mapbox offline download completed.');
+    } catch (e) {
+        console.error('Mapbox download failed', e);
     }
 }
 

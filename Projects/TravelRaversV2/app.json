@@ -28,6 +28,11 @@
     "plugins": [
       "expo-font"
     ],
-    "scheme": "travelravers"
+    "scheme": "travelravers",
+    "extra": {
+      "eas": {
+        "projectId": "461745a4-3b2e-42ad-a3aa-186dad5252bf"
+      }
+    }
   }
 }
