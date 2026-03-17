@@ -1,0 +1,137 @@
+[
+  {
+    "artistId": "calvin-harris",
+    "name": "Calvin Harris",
+    "genre": "House",
+    "vibe": "High-energy, melodic, festival anthem",
+    "typicalStage": "Arc Stage",
+    "energyScore": 9,
+    "darknessScore": 2
+  },
+  {
+    "artistId": "carl-cox",
+    "name": "Carl Cox",
+    "genre": "Techno",
+    "vibe": "Underground, driving, hypnotic groove",
+    "typicalStage": "Steel Yard",
+    "energyScore": 9,
+    "darknessScore": 6
+  },
+  {
+    "artistId": "charlotte-de-witte",
+    "name": "Charlotte de Witte",
+    "genre": "Dark Techno",
+    "vibe": "Dark, intense, industrial power",
+    "typicalStage": "Steel Yard",
+    "energyScore": 10,
+    "darknessScore": 9
+  },
+  {
+    "artistId": "chase-and-status",
+    "name": "Chase & Status",
+    "genre": "Drum & Bass",
+    "vibe": "High-energy, bass-heavy, crowd anthems",
+    "typicalStage": "Arc Stage",
+    "energyScore": 10,
+    "darknessScore": 4
+  },
+  {
+    "artistId": "amelie-lens",
+    "name": "Amelie Lens",
+    "genre": "Techno",
+    "vibe": "Dark, hypnotic, immersive energy",
+    "typicalStage": "Steel Yard",
+    "energyScore": 9,
+    "darknessScore": 8
+  },
+  {
+    "artistId": "andy-c",
+    "name": "Andy C",
+    "genre": "Drum & Bass",
+    "vibe": "High-energy, peak-time, relentless pace",
+    "typicalStage": "One 7 Four Arena",
+    "energyScore": 10,
+    "darknessScore": 5
+  },
+  {
+    "artistId": "fisher",
+    "name": "Fisher",
+    "genre": "Tech House",
+    "vibe": "High-energy, bouncy, club groove",
+    "typicalStage": "APEX Stage",
+    "energyScore": 9,
+    "darknessScore": 3
+  },
+  {
+    "artistId": "adam-beyer",
+    "name": "Adam Beyer",
+    "genre": "Techno",
+    "vibe": "Dark, driving, Drumcode pressure",
+    "typicalStage": "Steel Yard",
+    "energyScore": 8,
+    "darknessScore": 7
+  },
+  {
+    "artistId": "eric-prydz",
+    "name": "Eric Prydz",
+    "genre": "Progressive House",
+    "vibe": "Melodic, cinematic, epic builds",
+    "typicalStage": "Steel Yard",
+    "energyScore": 8,
+    "darknessScore": 4
+  },
+  {
+    "artistId": "disclosure",
+    "name": "Disclosure",
+    "genre": "House",
+    "vibe": "Melodic, UK garage, live energy",
+    "typicalStage": "Arc Stage",
+    "energyScore": 8,
+    "darknessScore": 2
+  },
+  {
+    "artistId": "sub-focus",
+    "name": "Sub Focus",
+    "genre": "Drum & Bass",
+    "vibe": "High-energy, melodic, uplifting bass",
+    "typicalStage": "Arc Stage",
+    "energyScore": 9,
+    "darknessScore": 3
+  },
+  {
+    "artistId": "armin-van-buuren",
+    "name": "Armin van Buuren",
+    "genre": "Trance",
+    "vibe": "Euphoric, uplifting, emotional journey",
+    "typicalStage": "APEX Stage",
+    "energyScore": 9,
+    "darknessScore": 2
+  },
+  {
+    "artistId": "camelphat",
+    "name": "CamelPhat",
+    "genre": "Tech House",
+    "vibe": "Melodic, groovy, deep atmosphere",
+    "typicalStage": "Steel Yard",
+    "energyScore": 7,
+    "darknessScore": 5
+  },
+  {
+    "artistId": "martin-garrix",
+    "name": "Martin Garrix",
+    "genre": "House",
+    "vibe": "High-energy, festival anthem, big room",
+    "typicalStage": "APEX Stage",
+    "energyScore": 10,
+    "darknessScore": 1
+  },
+  {
+    "artistId": "ben-nicky",
+    "name": "Ben Nicky",
+    "genre": "Hard Trance",
+    "vibe": "High-energy, chaotic, mash-up madness",
+    "typicalStage": "Misfit Stage",
+    "energyScore": 10,
+    "darknessScore": 4
+  }
+]

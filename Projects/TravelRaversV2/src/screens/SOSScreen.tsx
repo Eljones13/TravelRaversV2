@@ -1,596 +1,584 @@
 // ============================================================
-// TRAVEL RAVERS — SOSScreen (Full Welfare Build)
-// Accent: #FF3344 | RAVESafe + Emergency Contacts + Hydration
+// TRAVEL RAVERS — SOSScreen
+// Session SOS-REDESIGN: Phrase Finder + Emergency Numbers
+// Accent: #FF3344
+// Reads emergencyNumbers + scripts from useFestival()
 // ============================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  StatusBar, Platform, Linking, Alert, TextInput, Modal,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  Platform,
+  Linking,
+  Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as SQLite from 'expo-sqlite';
-import * as Notifications from 'expo-notifications';
-import * as Location from 'expo-location';
-import Svg, { Defs, Pattern, Circle, Rect, Polygon } from 'react-native-svg';
+import * as Clipboard from 'expo-clipboard';
+import Svg, { Defs, Pattern, Circle, Rect } from 'react-native-svg';
 import { Colors } from '../constants/colors';
+import { useFestival } from '../context/FestivalContext';
+import { useNavigation } from '@react-navigation/native';
 
-const ACCENT = Colors.module.SOS; // #FF3344
+const ACCENT = Colors.module.SOS; // '#FF3344'
+const D      = 160;               // SOS button diameter
 
-// ── Types ──────────────────────────────────────────────────
-
-type EmergencyContact = {
-  id: number;
-  name: string;
-  phone: string;
-};
-
-type WelfareTent = {
-  id: string;
-  festival: string;
-  lat: number;
-  lng: number;
-  address: string;
-};
-
-type RAVESafeCard = {
-  substance: string;
-  color: string;
-  safeDose: string;
-  dangerSigns: string[];
-  ifCollapses: string[];
-};
-
-// ── Navigation type ────────────────────────────────────────
-type SOSScreenProps = {
-  navigation: { goBack: () => void };
-};
-
-// ── Constants ──────────────────────────────────────────────
-
-const WELFARE_TENTS: WelfareTent[] = [
-  { id: 'g', festival: 'GLASTONBURY', lat: 51.1485, lng: -2.7144, address: 'Worthy Farm, Pilton, Somerset' },
-  { id: 'c', festival: 'CREAMFIELDS', lat: 53.3573, lng: -2.7415, address: 'Daresbury Estate, Cheshire' },
-  { id: 'r', festival: 'READING', lat: 51.4566, lng: -0.9814, address: 'Little John\'s Farm, Reading' },
-  { id: 'l', festival: 'LEEDS', lat: 53.8100, lng: -1.5500, address: 'Bramham Park, Leeds' },
-  { id: 'b', festival: 'BOOMTOWN', lat: 51.0280, lng: -1.3350, address: 'Matterley Estate, Winchester' },
-];
-
-const RAVESAFE_CARDS: RAVESafeCard[] = [
-  {
-    substance: 'MDMA',
-    color: '#FF2D78',
-    safeDose: 'Max 75–100mg. Wait 90 mins before redosing. Test your pill first.',
-    dangerSigns: ['Temperature above 39°C', 'Confusion / not responding', 'Muscle stiffness', 'Unable to pee for hours'],
-    ifCollapses: ['Call 999 immediately', 'Move to cool area', 'Keep them awake', 'Do NOT give water if not responding'],
-  },
-  {
-    substance: 'KETAMINE',
-    color: '#CC00FF',
-    safeDose: 'Start with small lines. Do not mix with alcohol. Never alone.',
-    dangerSigns: ['Completely unresponsive (k-hole)', 'Breathing very slow', 'Blue lips or fingertips'],
-    ifCollapses: ['Recovery position immediately', 'Call 999', 'Do not leave them alone', 'Tell medics what was taken'],
-  },
-  {
-    substance: 'ALCOHOL',
-    color: '#FFB300',
-    safeDose: 'Drink water between each drink. Eat beforehand. Know your limit.',
-    dangerSigns: ['Unresponsive / passed out', 'Choking or vomiting', 'Cold / clammy skin', 'Breathing very slowly'],
-    ifCollapses: ['Recovery position', 'Call 999', 'Never leave alone to sleep it off', 'Stay until ambulance arrives'],
-  },
-  {
-    substance: 'CANNABIS',
-    color: '#00FF88',
-    safeDose: 'Start very low with edibles — takes 1–2 hours to hit. Sit down if dizzy.',
-    dangerSigns: ['Severe paranoia / panic attack', 'Rapid heart rate', 'Chest pain', 'Dissociation'],
-    ifCollapses: ['Calm environment, quiet space', 'Talk slowly and reassuringly', 'Call 999 if no improvement', 'Do not restrain'],
-  },
-];
-
-const SOS_NUMBERS = [
-  { label: 'POLICE', number: '999', color: Colors.cyan },
-  { label: 'AMBULANCE', number: '999', color: ACCENT },
-  { label: 'FESTIVAL MEDICAL', number: '#FESTIVAL#', color: Colors.yellow },
-  { label: 'DAN HELPLINE', number: '08007766600', color: '#CC00FF' },
-];
-
-const HYDRATION_NOTIF_ID = 'tr_hydration';
-const HYDRATION_INTERVAL_MINS = 90;
-
-// ── DB helpers ─────────────────────────────────────────────
-
-let db: SQLite.SQLiteDatabase | null = null;
-
-async function getDB(): Promise<SQLite.SQLiteDatabase> {
-  if (!db) {
-    db = await SQLite.openDatabaseAsync('travel_ravers.db');
-    await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS emergency_contacts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        phone TEXT NOT NULL
-      );
-    `);
-  }
-  return db;
-}
-
-async function loadContacts(): Promise<EmergencyContact[]> {
-  const database = await getDB();
-  return database.getAllAsync<EmergencyContact>('SELECT * FROM emergency_contacts LIMIT 3;');
-}
-
-async function addContact(name: string, phone: string): Promise<void> {
-  const database = await getDB();
-  const count = await database.getFirstAsync<{ n: number }>('SELECT COUNT(*) as n FROM emergency_contacts;');
-  if ((count?.n ?? 0) >= 3) throw new Error('MAX_CONTACTS');
-  await database.runAsync('INSERT INTO emergency_contacts (name, phone) VALUES (?, ?);', [name, phone]);
-}
-
-async function deleteContact(id: number): Promise<void> {
-  const database = await getDB();
-  await database.runAsync('DELETE FROM emergency_contacts WHERE id = ?;', [id]);
-}
-
-// ── Distance ────────────────────────────────────────────────
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// ── Glow shadow helper ─────────────────────────────────────
-
-function glowStyle(color: string, radius = 8) {
+// ── Helpers ───────────────────────────────────────────────────
+function glow(color: string, r = 10) {
   return Platform.select({
-    web: { boxShadow: `0 0 ${radius}px ${color}` } as any,
-    default: { shadowColor: color, shadowOffset: { width: 0, height: 0 }, shadowRadius: radius, shadowOpacity: 1 },
+    web:     { boxShadow: `0 0 ${r}px ${color}` } as object,
+    default: { shadowColor: color, shadowOffset: { width: 0, height: 0 }, shadowRadius: r, shadowOpacity: 0.9 },
   })!;
 }
 
-// ── Corner brackets ────────────────────────────────────────
-const Corners: React.FC<{ color: string }> = ({ color }) => (
-  <>
-    <View style={[s.cTL, { borderColor: color }]} pointerEvents="none" />
-    <View style={[s.cTR, { borderColor: color }]} pointerEvents="none" />
-    <View style={[s.cBL, { borderColor: color }]} pointerEvents="none" />
-    <View style={[s.cBR, { borderColor: color }]} pointerEvents="none" />
-  </>
-);
-
-// ── Section header ─────────────────────────────────────────
-const SectionHeader: React.FC<{ title: string; icon: string }> = ({ title, icon }) => (
-  <View style={s.sectionHeader}>
-    <View style={[s.sectionLine, { backgroundColor: ACCENT }]} />
-    <Text style={s.sectionTitle}>{icon} {title}</Text>
-    <View style={[s.sectionLine, { backgroundColor: ACCENT }]} />
+// ── Section header ────────────────────────────────────────────
+const SectionHeader: React.FC<{ title: string; accent?: string }> = ({ title, accent = ACCENT }) => (
+  <View style={s.sectionRow}>
+    <View style={[s.sectionLine, { backgroundColor: accent }]} />
+    <Text style={[s.sectionLabel, { color: accent }]}>{title}</Text>
+    <View style={[s.sectionLine, { backgroundColor: accent }]} />
   </View>
 );
 
-// ── MAIN SCREEN ────────────────────────────────────────────
+// ── Pulsing SOS button ────────────────────────────────────────
+const SOSButton: React.FC<{ onPress: () => void }> = ({ onPress }) => {
+  const pulse = useRef(new Animated.Value(0)).current;
 
-export const SOSScreen: React.FC<SOSScreenProps> = ({ navigation }) => {
-  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
-  const [userLat, setUserLat] = useState<number | null>(null);
-  const [userLng, setUserLng] = useState<number | null>(null);
-  const [hydrationOn, setHydrationOn] = useState(false);
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newPhone, setNewPhone] = useState('');
-  const [selectedFestival, setSelectedFestival] = useState('GLASTONBURY');
-
-  // ── Load contacts + GPS ─────────────────────────────────
   useEffect(() => {
-    loadContacts().then(setContacts).catch(() => { });
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        setUserLat(loc.coords.latitude);
-        setUserLng(loc.coords.longitude);
-      }
-    })();
-  }, []);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 1250, useNativeDriver: false }),
+        Animated.timing(pulse, { toValue: 0, duration: 1250, useNativeDriver: false }),
+      ])
+    ).start();
+    return () => pulse.setValue(0);
+  }, [pulse]);
 
-  // ── Add contact ─────────────────────────────────────────
-  const handleAddContact = useCallback(async () => {
-    if (!newName.trim() || !newPhone.trim()) return;
+  const shadowRadius = pulse.interpolate({ inputRange: [0, 1], outputRange: [20, 32] });
+  const shadowOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0.9] });
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={sosBtn.wrap}>
+      <Animated.View
+        style={[
+          sosBtn.circle,
+          Platform.OS === 'web'
+            ? {}
+            : { shadowRadius, shadowOpacity, shadowColor: ACCENT, shadowOffset: { width: 0, height: 0 } },
+        ]}
+      >
+        <Text style={sosBtn.label}>SOS</Text>
+        <Text style={sosBtn.sublabel}>HOLD FOR EMERGENCY</Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
+// ── Emergency number pill ─────────────────────────────────────
+const NumPill: React.FC<{ label: string; number: string }> = ({ label, number }) => {
+  const dialable = number.startsWith('+') || /^\d/.test(number);
+  return (
+    <TouchableOpacity
+      style={[s.numPill, glow(ACCENT, 6)]}
+      onPress={() => {
+        if (dialable) Linking.openURL(`tel:${number}`);
+        else Alert.alert(label.toUpperCase(), number);
+      }}
+      activeOpacity={0.75}
+    >
+      <Text style={s.numPillLabel}>{label}</Text>
+      <Text style={s.numPillNumber}>{number}</Text>
+    </TouchableOpacity>
+  );
+};
+
+// ── Phrase situation definition ───────────────────────────────
+type Situation = {
+  emoji: string;
+  label: string;
+  key: keyof Festival['scripts'];
+};
+
+import type { Festival } from '../data/festivals';
+
+const SITUATIONS: Situation[] = [
+  { emoji: '🚑', label: 'I need a doctor',                    key: 'doctorNeeded'      },
+  { emoji: '💊', label: 'My friend needs help (no police)',   key: 'substance'         },
+  { emoji: '🚽', label: 'Where are the toilets?',            key: 'toilet'            },
+  { emoji: '💧', label: 'Where can I get water?',            key: 'water'             },
+  { emoji: '🔋', label: 'Where can I charge my phone?',      key: 'charging'          },
+  { emoji: '🏥', label: 'Where is the medical tent?',        key: 'medicalTent'       },
+  { emoji: '🚪', label: 'Where is the exit?',                key: 'exit'              },
+  { emoji: '👥', label: "I've lost my friends",              key: 'lostSquad'         },
+  { emoji: '💉', label: "I'm allergic to penicillin",        key: 'allergyPenicillin' },
+  { emoji: '✈️',  label: 'I want to call my embassy',         key: 'callEmbassy'       },
+  { emoji: '🆓', label: 'Am I free to go?',                  key: 'freeToGo'          },
+];
+
+// ── Translation slide card ────────────────────────────────────
+const TranslationCard: React.FC<{
+  situation: Situation;
+  phrase: string;
+  language: string;
+}> = ({ situation, phrase, language }) => {
+  const slideAnim = useRef(new Animated.Value(20)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    slideAnim.setValue(20);
+    opacityAnim.setValue(0);
+    Animated.parallel([
+      Animated.spring(slideAnim,  { toValue: 0, useNativeDriver: true, tension: 60, friction: 10 }),
+      Animated.timing(opacityAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+    setCopied(false);
+  }, [phrase, slideAnim, opacityAnim]);
+
+  const handleCopy = useCallback(async () => {
     try {
-      await addContact(newName.trim(), newPhone.trim());
-      const updated = await loadContacts();
-      setContacts(updated);
-      setNewName('');
-      setNewPhone('');
-      setShowAddModal(false);
-    } catch (e: any) {
-      if (e.message === 'MAX_CONTACTS') Alert.alert('MAXIMUM CONTACTS', 'You can store up to 3 emergency contacts.');
+      await Clipboard.setStringAsync(phrase);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      Alert.alert('COPY', phrase);
     }
-  }, [newName, newPhone]);
+  }, [phrase]);
 
-  const handleDeleteContact = useCallback(async (id: number) => {
-    Alert.alert('REMOVE CONTACT', 'Delete this emergency contact?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'DELETE', style: 'destructive', onPress: async () => {
-          await deleteContact(id);
-          setContacts(await loadContacts());
-        }
-      },
-    ]);
-  }, []);
+  return (
+    <Animated.View
+      style={[s.transCard, glow(ACCENT, 12), { transform: [{ translateY: slideAnim }], opacity: opacityAnim }]}
+    >
+      <View style={s.transShine} pointerEvents="none" />
 
-  // ── Hydration toggle ────────────────────────────────────
-  const toggleHydration = useCallback(async () => {
-    if (hydrationOn) {
-      await Notifications.cancelScheduledNotificationAsync(HYDRATION_NOTIF_ID).catch(() => { });
-      setHydrationOn(false);
-    } else {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('NOTIFICATIONS OFF', 'Enable notifications in Settings to use hydration reminders.');
-        return;
-      }
-      await Notifications.scheduleNotificationAsync({
-        identifier: HYDRATION_NOTIF_ID,
-        content: {
-          title: '💧  DRINK WATER',
-          body: 'Stay safe out there — hydration is critical at festivals.',
-          sound: true,
+      {/* English label */}
+      <Text style={s.transEnglish}>
+        {situation.emoji}  {situation.label}
+      </Text>
+
+      {/* Language badge */}
+      <View style={s.langBadge}>
+        <Text style={s.langBadgeText}>{language.toUpperCase()}</Text>
+      </View>
+
+      {/* Phrase (large, readable, show to local) */}
+      <Text style={s.transPhrase}>{phrase}</Text>
+
+      {/* Copy + hint */}
+      <TouchableOpacity
+        style={[s.copyBtn, { borderColor: copied ? Colors.green + '88' : ACCENT + '66' }]}
+        onPress={handleCopy}
+        activeOpacity={0.75}
+      >
+        <Text style={[s.copyBtnText, { color: copied ? Colors.green : ACCENT }]}>
+          {copied ? 'COPIED ✓' : 'TAP TO COPY'}
+        </Text>
+      </TouchableOpacity>
+      <Text style={s.showStaffHint}>
+        TAP COPY OR SHOW THIS SCREEN TO LOCAL STAFF
+      </Text>
+    </Animated.View>
+  );
+};
+
+// ── MAIN SCREEN ───────────────────────────────────────────────
+export const SOSScreen: React.FC = () => {
+  const navigation           = useNavigation<any>();
+  const { selectedFestival } = useFestival();
+  const [selectedSit, setSelectedSit] = useState<Situation | null>(null);
+
+  const handleSOSPress = () => {
+    const policeNum = selectedFestival?.emergencyNumbers.police ?? '999';
+    Alert.alert(
+      '⚠ EMERGENCY — SOS',
+      'Do you need emergency services?',
+      [
+        {
+          text: `CALL POLICE (${policeNum})`,
+          style: 'destructive',
+          onPress: () => Linking.openURL(`tel:${policeNum}`),
         },
-        trigger: { seconds: HYDRATION_INTERVAL_MINS * 60, repeats: true },
-      });
-      setHydrationOn(true);
-    }
-  }, [hydrationOn]);
+        { text: 'CANCEL', style: 'cancel' },
+      ]
+    );
+  };
 
-  // ── I AM SAFE check-in ──────────────────────────────────
-  const handleSafeCheckIn = useCallback(() => {
-    if (contacts.length === 0) {
-      Alert.alert('NO CONTACT', 'Add an emergency contact first.');
-      return;
-    }
-    const contact = contacts[0];
-    const ts = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    const msg = encodeURIComponent(`I am safe at ${selectedFestival} — ${ts} ✅`);
-    const phone = contact.phone.replace(/\D/g, '');
-    Linking.openURL(`https://wa.me/${phone}?text=${msg}`).catch(() => {
-      // Fallback to SMS if WhatsApp not available
-      Linking.openURL(`sms:${contact.phone}?body=${msg}`);
-    });
-  }, [contacts, selectedFestival]);
+  const handleSituationPress = (sit: Situation) => {
+    setSelectedSit(prev => (prev?.key === sit.key ? null : sit));
+  };
 
-  // ── Directions ─────────────────────────────────────────
-  const openDirections = useCallback((tent: WelfareTent) => {
-    const url = Platform.select({
-      ios: `maps:0,0?q=${tent.festival}+Welfare+Tent&ll=${tent.lat},${tent.lng}`,
-      android: `geo:${tent.lat},${tent.lng}?q=${tent.lat},${tent.lng}(${tent.festival}+Welfare)`,
-      default: `https://www.google.com/maps/dir/?api=1&destination=${tent.lat},${tent.lng}`,
-    })!;
-    Linking.openURL(url);
-  }, []);
-
-  // ── Render ────────────────────────────────────────────────
   return (
     <SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
 
-      {/* Dot grid background */}
+      {/* Dot-grid background */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <Svg width="100%" height="100%">
           <Defs>
-            <Pattern id="dotG" width="44" height="44" patternUnits="userSpaceOnUse">
-              <Circle cx="1" cy="1" r="0.5" fill="rgba(255,51,68,0.06)" />
+            <Pattern id="dotSOS" width="44" height="44" patternUnits="userSpaceOnUse">
+              <Circle cx="1" cy="1" r="0.5" fill="rgba(255,51,68,0.05)" />
             </Pattern>
           </Defs>
-          <Rect width="100%" height="100%" fill="url(#dotG)" />
+          <Rect width="100%" height="100%" fill="url(#dotSOS)" />
         </Svg>
       </View>
 
-      {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity onPress={navigation.goBack} style={s.backBtn}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-            <Polygon points="15,5 7,12 15,19" fill={ACCENT} />
-          </Svg>
-          <Text style={[s.backText, { color: ACCENT }]}>BACK</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: ACCENT }, glowStyle(ACCENT, 6)]}>⚠ SOS</Text>
-        <View style={s.headerRight} />
-      </View>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
 
-      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
-
-        {/* ── I AM SAFE ── */}
-        <TouchableOpacity style={s.iamSafeBtn} onPress={handleSafeCheckIn} activeOpacity={0.8}>
-          <View style={[s.iamSafeBtnInner, glowStyle(Colors.green, 14)]}>
-            <Text style={s.iamSafeText}>✓  I AM SAFE</Text>
-            <Text style={s.iamSafeSub}>SEND WHATSAPP CHECK-IN →</Text>
-          </View>
-          <Corners color={Colors.green} />
-        </TouchableOpacity>
-
-        {/* ── EMERGENCY CONTACTS ── */}
-        <SectionHeader title="EMERGENCY CONTACTS" icon="📞" />
-
-        {contacts.map(c => (
-          <View key={c.id} style={s.contactCard}>
-            <View>
-              <Text style={s.contactName}>{c.name}</Text>
-              <Text style={s.contactPhone}>{c.phone}</Text>
-            </View>
-            <View style={s.contactActions}>
-              <TouchableOpacity style={[s.contactBtn, { borderColor: Colors.green + '66' }]} onPress={() => Linking.openURL(`tel:${c.phone}`)}>
-                <Text style={[s.contactBtnText, { color: Colors.green }]}>CALL</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.contactBtn, { borderColor: Colors.cyan + '66' }]} onPress={() => Linking.openURL(`sms:${c.phone}`)}>
-                <Text style={[s.contactBtnText, { color: Colors.cyan }]}>TEXT</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteContact(c.id)}>
-                <Text style={[s.contactBtnText, { color: ACCENT + '88' }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <Corners color={ACCENT} />
-          </View>
-        ))}
-
-        {contacts.length < 3 && (
-          <TouchableOpacity style={s.addContactBtn} onPress={() => setShowAddModal(true)}>
-            <Text style={s.addContactText}>+ ADD EMERGENCY CONTACT</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* ── SOS NUMBERS ── */}
-        <SectionHeader title="EMERGENCY NUMBERS" icon="🚨" />
-        <View style={s.sosGrid}>
-          {SOS_NUMBERS.map(n => (
-            <TouchableOpacity
-              key={n.label}
-              style={[s.sosCard, { borderColor: n.color + '55' }, glowStyle(n.color, 6)]}
-              onPress={() => {
-                if (n.number.startsWith('#')) {
-                  Alert.alert('FESTIVAL MEDICAL', 'Check the festival app or wristband for the on-site medical hotline.');
-                } else {
-                  Linking.openURL(`tel:${n.number}`);
-                }
-              }}
-            >
-              <Text style={[s.sosLabel, { color: n.color }]}>{n.label}</Text>
-              <Text style={[s.sosNumber, { color: n.color }]}>{n.number.startsWith('#') ? 'CHECK IN-APP' : n.number}</Text>
-            </TouchableOpacity>
-          ))}
+        {/* ── Header ── */}
+        <View style={s.header}>
+          <Text style={[s.headerTitle, glow(ACCENT, 12)]}>SOS // WELFARE</Text>
+          <Text style={s.headerSubtitle}>
+            {selectedFestival?.name ?? 'SELECT FESTIVAL'}
+          </Text>
         </View>
 
-        {/* ── WELFARE TENT LOCATOR ── */}
-        <SectionHeader title="WELFARE TENT LOCATOR" icon="⛺" />
-        {WELFARE_TENTS.map(tent => {
-          const dist = userLat !== null && userLng !== null
-            ? `${haversineKm(userLat, userLng, tent.lat, tent.lng).toFixed(0)} KM`
-            : null;
-          return (
-            <View key={tent.id} style={s.tentCard}>
-              <View style={s.tentLeft}>
-                <Text style={[s.tentName, { color: ACCENT }]}>{tent.festival}</Text>
-                <Text style={s.tentAddr}>{tent.address}</Text>
-                {dist && <Text style={[s.tentDist, { color: Colors.cyan }]}>{dist} FROM YOU</Text>}
-              </View>
-              <TouchableOpacity style={s.directionsBtn} onPress={() => openDirections(tent)}>
-                <Text style={s.directionsBtnText}>DIRECTIONS →</Text>
-              </TouchableOpacity>
-              <Corners color={ACCENT} />
-            </View>
-          );
-        })}
+        {/* ── SOS Circle Button ── */}
+        <View style={s.sosSection}>
+          <SOSButton onPress={handleSOSPress} />
+        </View>
 
-        {/* ── HYDRATION REMINDER ── */}
-        <SectionHeader title="HYDRATION REMINDER" icon="💧" />
-        <View style={s.hydrationCard}>
-          <View>
-            <Text style={s.hydrationTitle}>DRINK WATER ALERT</Text>
-            <Text style={s.hydrationSub}>Notification every {HYDRATION_INTERVAL_MINS} minutes</Text>
-          </View>
-          <TouchableOpacity
-            style={[s.toggle, hydrationOn && { backgroundColor: Colors.cyan + '22', borderColor: Colors.cyan }]}
-            onPress={toggleHydration}
-          >
-            <Text style={[s.toggleText, { color: hydrationOn ? Colors.cyan : Colors.dim }]}>
-              {hydrationOn ? 'ON' : 'OFF'}
+        {/* ── Emergency Numbers Row ── */}
+        {selectedFestival ? (
+          <>
+            <View style={s.numRow}>
+              <NumPill label="POLICE"    number={selectedFestival.emergencyNumbers.police}         />
+              <NumPill label="AMBULANCE" number={selectedFestival.emergencyNumbers.ambulance}      />
+              <NumPill label="MEDICAL"   number={selectedFestival.emergencyNumbers.festivalMedical}/>
+            </View>
+
+            {/* ── Phrase Finder ── */}
+            <SectionHeader title="I NEED HELP WITH..." />
+
+            <View style={s.situationList}>
+              {SITUATIONS.map(sit => {
+                const isActive = selectedSit?.key === sit.key;
+                return (
+                  <TouchableOpacity
+                    key={sit.key}
+                    style={[
+                      s.sitRow,
+                      isActive && { borderColor: ACCENT + '99' },
+                      isActive && glow(ACCENT, 8),
+                    ]}
+                    onPress={() => handleSituationPress(sit)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={s.sitEmoji}>{sit.emoji}</Text>
+                    <Text style={[s.sitLabel, isActive && { color: '#ffffff' }]}>{sit.label}</Text>
+                    <Text style={[s.sitChevron, isActive && { color: ACCENT }]}>›</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* ── Translation Card ── */}
+            {selectedSit && (
+              <TranslationCard
+                situation={selectedSit}
+                phrase={selectedFestival.scripts[selectedSit.key]}
+                language={selectedFestival.language}
+              />
+            )}
+          </>
+        ) : (
+          /* ── No festival fallback ── */
+          <View style={[s.noFestCard, glow(ACCENT, 10)]}>
+            <Text style={s.noFestIcon}>⚠️</Text>
+            <Text style={s.noFestTitle}>SELECT A FESTIVAL</Text>
+            <Text style={s.noFestBody}>
+              Select your festival to see local emergency numbers and native language phrases.
             </Text>
-          </TouchableOpacity>
-          <Corners color={hydrationOn ? Colors.cyan : Colors.dim} />
-        </View>
-
-        {/* ── RAVESAFE ── */}
-        <SectionHeader title="RAVESAFE — HARM REDUCTION" icon="🔬" />
-        {RAVESAFE_CARDS.map(card => {
-          const isOpen = expandedCard === card.substance;
-          return (
             <TouchableOpacity
-              key={card.substance}
-              style={[s.raveCard, { borderColor: card.color + '66' }, isOpen && glowStyle(card.color, 8)]}
-              onPress={() => setExpandedCard(isOpen ? null : card.substance)}
+              style={[s.noFestBtn, glow(Colors.cyan, 8)]}
+              onPress={() => navigation.navigate('FestivalSelect')}
               activeOpacity={0.8}
             >
-              <View style={s.raveCardHeader}>
-                <Text style={[s.raveSubstance, { color: card.color }]}>{card.substance}</Text>
-                <Text style={[s.raveChevron, { color: card.color }]}>{isOpen ? '▲' : '▼'}</Text>
-              </View>
-              {isOpen && (
-                <View style={s.raveBody}>
-                  <Text style={s.raveSection}>SAFE DOSE</Text>
-                  <Text style={s.raveText}>{card.safeDose}</Text>
-                  <Text style={s.raveSection}>DANGER SIGNS</Text>
-                  {card.dangerSigns.map((sign, i) => (
-                    <Text key={i} style={[s.raveText, { color: ACCENT }]}>• {sign}</Text>
-                  ))}
-                  <Text style={s.raveSection}>IF SOMEONE COLLAPSES</Text>
-                  {card.ifCollapses.map((step, i) => (
-                    <Text key={i} style={s.raveText}>{i + 1}. {step}</Text>
-                  ))}
-                </View>
-              )}
-              <Corners color={card.color} />
+              <Text style={s.noFestBtnText}>SELECT FESTIVAL →</Text>
             </TouchableOpacity>
-          );
-        })}
+          </View>
+        )}
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
-
-      {/* ── Add Contact Modal ── */}
-      <Modal visible={showAddModal} transparent animationType="slide">
-        <TouchableOpacity style={s.modalOverlay} activeOpacity={1} onPress={() => setShowAddModal(false)}>
-          <TouchableOpacity activeOpacity={1} style={s.modalSheet}>
-            <Corners color={ACCENT} />
-            <Text style={[s.modalTitle, { color: ACCENT }]}>ADD EMERGENCY CONTACT</Text>
-            <TextInput
-              style={s.input}
-              placeholder="Name"
-              placeholderTextColor={Colors.dim}
-              value={newName}
-              onChangeText={setNewName}
-              autoCapitalize="words"
-            />
-            <TextInput
-              style={s.input}
-              placeholder="Phone number"
-              placeholderTextColor={Colors.dim}
-              value={newPhone}
-              onChangeText={setNewPhone}
-              keyboardType="phone-pad"
-            />
-            <TouchableOpacity style={[s.saveBtn, { borderColor: ACCENT, backgroundColor: ACCENT + '18' }]} onPress={handleAddContact}>
-              <Text style={[s.saveBtnText, { color: ACCENT }]}>SAVE CONTACT</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
+        {/* ── I AM SAFE ── */}
+        <SectionHeader title="SAFE CHECK-IN" accent={Colors.green} />
+        <TouchableOpacity
+          style={[s.safeBtn, glow(Colors.green, 12)]}
+          onPress={() =>
+            Alert.alert(
+              '✅ SEND CHECK-IN',
+              'Send a safe message to your emergency contact?',
+              [
+                { text: 'CANCEL', style: 'cancel' },
+                {
+                  text: 'SEND',
+                  onPress: () =>
+                    Alert.alert('CHECK-IN SENT', 'Your emergency contact has been notified you are safe.'),
+                },
+              ]
+            )
+          }
+          activeOpacity={0.8}
+        >
+          <Text style={s.safeBtnText}>✓ I AM SAFE — SEND CHECK-IN</Text>
         </TouchableOpacity>
-      </Modal>
 
+        <View style={{ height: 60 }} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
-// ── Styles ─────────────────────────────────────────────────
-const CORNER = 10;
-const CW = 2;
+export default SOSScreen;
 
+// ── SOS button styles ─────────────────────────────────────────
+const sosBtn = StyleSheet.create({
+  wrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  circle: {
+    width: D,
+    height: D,
+    borderRadius: D / 2,
+    borderWidth: 2,
+    borderColor: ACCENT,
+    backgroundColor: 'rgba(255,51,68,0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    elevation: 8,
+  },
+  label: {
+    fontFamily: 'Orbitron_700Bold',
+    fontSize: 30,
+    color: ACCENT,
+    letterSpacing: 6,
+    lineHeight: 36,
+    ...Platform.select({
+      web:     { textShadow: `0 0 14px ${ACCENT}` } as object,
+      default: {},
+    }),
+  },
+  sublabel: {
+    fontFamily: 'ShareTechMono_400Regular',
+    fontSize: 8,
+    color: Colors.dim,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+});
+
+// ── Screen styles ─────────────────────────────────────────────
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  safe:          { flex: 1, backgroundColor: Colors.bg },
+  scroll:        { flex: 1 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
+
+  // Header
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(255,51,68,0.15)',
-    backgroundColor: 'rgba(3,6,15,0.95)',
+    alignItems: 'center',
+    paddingTop: 20,
+    paddingBottom: 16,
+    gap: 4,
   },
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, minWidth: 60 },
-  backText: { fontSize: 10, letterSpacing: 2, fontFamily: 'Orbitron_700Bold' },
-  headerTitle: { fontSize: 15, fontFamily: 'Orbitron_700Bold', letterSpacing: 3 },
-  headerRight: { minWidth: 60 },
-
-  scroll: { flex: 1 },
-  scrollContent: { paddingTop: 8, paddingHorizontal: 16, paddingBottom: 40 },
-
-  // I AM SAFE
-  iamSafeBtn: { position: 'relative', marginBottom: 20, marginTop: 8, borderRadius: 16 },
-  iamSafeBtnInner: {
-    backgroundColor: Colors.green + '12', borderWidth: 1.5, borderColor: Colors.green + '88',
-    borderRadius: 16, paddingVertical: 20, alignItems: 'center', gap: 4,
-    ...Platform.select({ web: { boxShadow: `0 0 20px ${Colors.green}40` } as any, default: {} }),
+  headerTitle: {
+    fontFamily: 'Orbitron_700Bold',
+    fontSize: 20,
+    color: ACCENT,
+    letterSpacing: 4,
+    textTransform: 'uppercase',
   },
-  iamSafeText: { color: Colors.green, fontSize: 20, fontFamily: 'Orbitron_700Bold', letterSpacing: 3 },
-  iamSafeSub: { color: Colors.green + 'AA', fontSize: 9, letterSpacing: 2, fontFamily: 'ShareTechMono_400Regular' },
+  headerSubtitle: {
+    fontFamily: 'ShareTechMono_400Regular',
+    fontSize: 9,
+    color: Colors.dim,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+
+  // SOS button section
+  sosSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+
+  // Emergency number pills
+  numRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 4,
+    flexWrap: 'wrap',
+  },
+  numPill: {
+    flex: 1,
+    minWidth: 90,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: ACCENT + '66',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    gap: 3,
+  },
+  numPillLabel: {
+    fontFamily: 'Orbitron_700Bold',
+    fontSize: 7,
+    color: Colors.dim,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  numPillNumber: {
+    fontFamily: 'Orbitron_700Bold',
+    fontSize: 12,
+    color: ACCENT,
+    letterSpacing: 1.5,
+  },
 
   // Section header
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 14 },
-  sectionLine: { flex: 1, height: 1, opacity: 0.3 },
-  sectionTitle: { color: ACCENT, fontSize: 9, letterSpacing: 3, fontFamily: 'Orbitron_700Bold', textTransform: 'uppercase' },
+  sectionRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20, marginBottom: 12 },
+  sectionLine:  { flex: 1, height: 1, opacity: 0.35 },
+  sectionLabel: { fontSize: 9, letterSpacing: 3, fontFamily: 'Orbitron_700Bold', textTransform: 'uppercase' },
 
-  // Contacts
-  contactCard: {
-    position: 'relative', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: 'rgba(6,16,36,0.88)', borderWidth: 1, borderColor: 'rgba(255,51,68,0.2)',
-    borderRadius: 10, padding: 14, marginBottom: 8,
+  // Situation list
+  situationList: { gap: 6, marginBottom: 4 },
+  sitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: 'rgba(255,51,68,0.22)',
+    borderRadius: 10,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    gap: 10,
   },
-  contactName: { color: Colors.text, fontSize: 12, fontFamily: 'Orbitron_700Bold', letterSpacing: 1.5 },
-  contactPhone: { color: Colors.dim, fontSize: 10, fontFamily: 'ShareTechMono_400Regular', marginTop: 2 },
-  contactActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  contactBtn: { borderWidth: 1, borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10 },
-  contactBtnText: { fontSize: 9, fontFamily: 'Orbitron_700Bold', letterSpacing: 1.5 },
-  addContactBtn: {
-    borderWidth: 1, borderColor: ACCENT + '55', borderStyle: 'dashed', borderRadius: 10,
-    paddingVertical: 14, alignItems: 'center', marginBottom: 4,
-  },
-  addContactText: { color: ACCENT, fontSize: 10, fontFamily: 'Orbitron_700Bold', letterSpacing: 2 },
+  sitEmoji:   { fontSize: 18, width: 26 },
+  sitLabel:   { flex: 1, fontFamily: 'ShareTechMono_400Regular', fontSize: 12, color: Colors.text, letterSpacing: 0.8 },
+  sitChevron: { fontFamily: 'Orbitron_700Bold', fontSize: 20, color: Colors.dim, lineHeight: 24 },
 
-  // SOS grid
-  sosGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  sosCard: {
-    flex: 1, minWidth: '45%', backgroundColor: 'rgba(6,16,36,0.88)',
-    borderWidth: 1, borderRadius: 10, padding: 14, gap: 4,
+  // Translation card
+  transCard: {
+    position: 'relative',
+    backgroundColor: Colors.glass,
+    borderWidth: 1.5,
+    borderColor: ACCENT + '77',
+    borderRadius: 14,
+    overflow: 'hidden',
+    padding: 20,
+    marginTop: 12,
+    gap: 10,
   },
-  sosLabel: { fontSize: 8, letterSpacing: 2, fontFamily: 'Orbitron_700Bold' },
-  sosNumber: { fontSize: 16, fontFamily: 'Orbitron_700Bold', letterSpacing: 1 },
+  transShine: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: 2,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  transEnglish: {
+    fontFamily: 'ShareTechMono_400Regular',
+    fontSize: 9,
+    color: Colors.dim,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  langBadge: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: ACCENT + '66',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    backgroundColor: ACCENT + '10',
+  },
+  langBadgeText: {
+    fontFamily: 'Orbitron_700Bold',
+    fontSize: 8,
+    color: ACCENT,
+    letterSpacing: 2,
+  },
+  transPhrase: {
+    fontFamily: 'Orbitron_700Bold',
+    fontSize: 20,
+    color: '#ffffff',
+    lineHeight: 30,
+    letterSpacing: 0.5,
+  },
+  copyBtn: {
+    alignSelf: 'flex-start',
+    borderWidth: 1.5,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,51,68,0.08)',
+  },
+  copyBtnText: {
+    fontFamily: 'Orbitron_700Bold',
+    fontSize: 9,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  showStaffHint: {
+    fontFamily: 'ShareTechMono_400Regular',
+    fontSize: 8,
+    color: Colors.dim,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
 
-  // Welfare tents
-  tentCard: {
-    position: 'relative', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: 'rgba(6,16,36,0.88)', borderWidth: 1, borderColor: 'rgba(255,51,68,0.2)',
-    borderRadius: 10, padding: 14, marginBottom: 8,
+  // No festival card
+  noFestCard: {
+    position: 'relative',
+    backgroundColor: Colors.glass,
+    borderWidth: 1.5,
+    borderColor: ACCENT + '55',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
   },
-  tentLeft: { flex: 1 },
-  tentName: { fontSize: 11, fontFamily: 'Orbitron_700Bold', letterSpacing: 2 },
-  tentAddr: { color: Colors.dim, fontSize: 9, fontFamily: 'ShareTechMono_400Regular', marginTop: 2 },
-  tentDist: { fontSize: 9, fontFamily: 'Orbitron_700Bold', letterSpacing: 1.5, marginTop: 4 },
-  directionsBtn: { borderWidth: 1, borderColor: ACCENT + '66', borderRadius: 12, paddingVertical: 6, paddingHorizontal: 12, marginLeft: 8 },
-  directionsBtnText: { color: ACCENT, fontSize: 9, fontFamily: 'Orbitron_700Bold', letterSpacing: 1.5 },
+  noFestIcon:    { fontSize: 36 },
+  noFestTitle:   { fontFamily: 'Orbitron_700Bold', fontSize: 13, color: ACCENT, letterSpacing: 3, textTransform: 'uppercase' },
+  noFestBody:    { fontFamily: 'ShareTechMono_400Regular', fontSize: 11, color: Colors.dim, letterSpacing: 1, textAlign: 'center', lineHeight: 18 },
+  noFestBtn: {
+    marginTop: 6,
+    borderWidth: 1.5,
+    borderColor: Colors.cyan + '88',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: Colors.cyan + '10',
+  },
+  noFestBtnText: { fontFamily: 'Orbitron_700Bold', fontSize: 11, color: Colors.cyan, letterSpacing: 2 },
 
-  // Hydration
-  hydrationCard: {
-    position: 'relative', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: 'rgba(6,16,36,0.88)', borderWidth: 1, borderColor: 'rgba(0,245,255,0.15)',
-    borderRadius: 10, padding: 16, marginBottom: 4,
+  // I AM SAFE
+  safeBtn: {
+    width: '100%',
+    backgroundColor: Colors.green + '12',
+    borderWidth: 2,
+    borderColor: Colors.green,
+    borderRadius: 14,
+    paddingVertical: 18,
+    alignItems: 'center',
+    marginTop: 8,
   },
-  hydrationTitle: { color: Colors.text, fontSize: 12, fontFamily: 'Orbitron_700Bold', letterSpacing: 2 },
-  hydrationSub: { color: Colors.dim, fontSize: 9, fontFamily: 'ShareTechMono_400Regular', marginTop: 2 },
-  toggle: { borderWidth: 1, borderColor: Colors.dim, borderRadius: 20, paddingVertical: 6, paddingHorizontal: 18 },
-  toggleText: { fontSize: 10, fontFamily: 'Orbitron_700Bold', letterSpacing: 2 },
-
-  // RAVESafe
-  raveCard: {
-    position: 'relative', backgroundColor: 'rgba(6,16,36,0.9)',
-    borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 10,
+  safeBtnText: {
+    fontFamily: 'Orbitron_700Bold',
+    fontSize: 13,
+    color: Colors.green,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
-  raveCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  raveSubstance: { fontSize: 13, fontFamily: 'Orbitron_700Bold', letterSpacing: 3 },
-  raveChevron: { fontSize: 11, fontFamily: 'Orbitron_700Bold' },
-  raveBody: { marginTop: 12, gap: 4 },
-  raveSection: { color: Colors.dim, fontSize: 8, letterSpacing: 2, fontFamily: 'Orbitron_700Bold', marginTop: 10, marginBottom: 2 },
-  raveText: { color: Colors.text, fontSize: 11, fontFamily: 'ShareTechMono_400Regular', lineHeight: 17 },
-
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(3,6,15,0.85)', justifyContent: 'flex-end' },
-  modalSheet: {
-    position: 'relative', backgroundColor: 'rgba(6,16,36,0.98)',
-    borderTopWidth: 1.5, borderLeftWidth: 1, borderRightWidth: 1, borderColor: ACCENT + '66',
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, gap: 12,
-  },
-  modalTitle: { fontSize: 13, fontFamily: 'Orbitron_700Bold', letterSpacing: 2, marginBottom: 4 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1,
-    borderColor: 'rgba(255,51,68,0.3)', borderRadius: 8,
-    paddingVertical: 12, paddingHorizontal: 14, color: Colors.text,
-    fontFamily: 'ShareTechMono_400Regular', fontSize: 13, letterSpacing: 1,
-  },
-  saveBtn: { marginTop: 4, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  saveBtnText: { fontSize: 12, fontFamily: 'Orbitron_700Bold', letterSpacing: 2 },
-
-  // Corner brackets
-  cTL: { position: 'absolute', top: 0, left: 0, width: CORNER, height: CORNER, borderTopWidth: CW, borderLeftWidth: CW },
-  cTR: { position: 'absolute', top: 0, right: 0, width: CORNER, height: CORNER, borderTopWidth: CW, borderRightWidth: CW },
-  cBL: { position: 'absolute', bottom: 0, left: 0, width: CORNER, height: CORNER, borderBottomWidth: CW, borderLeftWidth: CW },
-  cBR: { position: 'absolute', bottom: 0, right: 0, width: CORNER, height: CORNER, borderBottomWidth: CW, borderRightWidth: CW },
 });

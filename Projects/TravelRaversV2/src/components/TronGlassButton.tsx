@@ -1,12 +1,19 @@
 // ============================================================
 // TRAVEL RAVERS — TronGlassButton Component
-// Redesigned to match tron-icons.png reference
-// Five-layer visual depth: dark base → diagonal glass gradient
-// → neon border glow → top shine scan line → inner radial glow
-// Supports 3-column grid layout (default) and 2-column
+// 3-Layer Glass Spec — refactored 2026-03-16
+//
+// Layer stack (bottom → top, all clipped by overflow:'hidden'):
+//   L1 — Base:  backgroundColor rgba(6,16,36,0.95) — deep dark navy
+//   L2 — Shine: expo-linear-gradient  rgba(255,255,255,0.08) → transparent
+//   L3 — Lip:   absolute top View  h=1.5  white  opacity=0.15
+//
+// Border:  1.5px  rgba(accentColor, 0.4)  + platform glow shadow
+// Pulse:   Animated.View overlay carries the pulsing glow ring
+// HUD:     SVG L-shape corner brackets — only when pressed/active
+// Fonts:   Orbitron_700Bold (title)  |  ShareTechMono_400Regular (sublabel)
 // ============================================================
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -18,20 +25,85 @@ import {
   Dimensions,
   ImageSourcePropType,
 } from 'react-native';
-import Svg, { Defs, RadialGradient, LinearGradient, Stop, Rect } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const BORDER_RADIUS  = 20;
+const BRACKET_ARM    = 10;
+const BRACKET_INSET  = 8;
+const BRACKET_SW     = 1.5;
+
+// ─── Props ──────────────────────────────────────────────────────────────────
+
 interface TronGlassButtonProps {
-  label: string;
-  sublabel: string;
-  icon?: React.ReactNode;
-  iconSource?: ImageSourcePropType | null;
-  buttonSize?: number;
-  accentColor: string; // e.g. '#00FFFF'
-  onPress: () => void;
-  columns?: 2 | 3;   // grid columns — 3 is default (12-module grid)
+  label:        string;
+  sublabel:     string;
+  icon?:        React.ReactNode;
+  iconSource?:  ImageSourcePropType | null;
+  buttonSize?:  number;
+  accentColor:  string;   // hex e.g. '#00FFFF'
+  onPress:      () => void;
+  columns?:     2 | 3;
 }
+
+// ─── SVG HUD corner brackets ────────────────────────────────────────────────
+// L-shaped brackets in all 4 corners — only rendered when pressed/active.
+// Inset 8px from container edges so they sit comfortably inside the 20px curve.
+
+interface HudBracketsProps {
+  color: string;
+  size:  number;
+}
+
+const HudBrackets: React.FC<HudBracketsProps> = ({ color, size }) => {
+  const i  = BRACKET_INSET;
+  const a  = BRACKET_ARM;
+  const sw = BRACKET_SW;
+  const s  = size;
+
+  return (
+    <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+      <Svg width={s} height={s}>
+        {/* Top-Left */}
+        <Path
+          d={`M ${i + a} ${i} L ${i} ${i} L ${i} ${i + a}`}
+          stroke={color}
+          strokeWidth={sw}
+          fill="none"
+          strokeLinecap="square"
+        />
+        {/* Top-Right */}
+        <Path
+          d={`M ${s - i - a} ${i} L ${s - i} ${i} L ${s - i} ${i + a}`}
+          stroke={color}
+          strokeWidth={sw}
+          fill="none"
+          strokeLinecap="square"
+        />
+        {/* Bottom-Left */}
+        <Path
+          d={`M ${i} ${s - i - a} L ${i} ${s - i} L ${i + a} ${s - i}`}
+          stroke={color}
+          strokeWidth={sw}
+          fill="none"
+          strokeLinecap="square"
+        />
+        {/* Bottom-Right */}
+        <Path
+          d={`M ${s - i} ${s - i - a} L ${s - i} ${s - i} L ${s - i - a} ${s - i}`}
+          stroke={color}
+          strokeWidth={sw}
+          fill="none"
+          strokeLinecap="square"
+        />
+      </Svg>
+    </View>
+  );
+};
+
+// ─── TronGlassButton ────────────────────────────────────────────────────────
 
 export const TronGlassButton: React.FC<TronGlassButtonProps> = ({
   label,
@@ -41,26 +113,42 @@ export const TronGlassButton: React.FC<TronGlassButtonProps> = ({
   buttonSize: buttonSizeProp,
   accentColor,
   onPress,
+  columns = 3,
 }) => {
   const pulseAnim = useRef(new Animated.Value(0.55)).current;
-  const scanAnim = useRef(new Animated.Value(0)).current;
+  const [pressed, setPressed] = useState(false);
 
-  // Platform-specific glow styles
+  // ── Platform glow shadow (outer, on the non-clipping wrapper) ────────────
   const outerGlowShadow = Platform.select({
-    web: { boxShadow: `0 0 16px ${accentColor}, 0 0 32px ${accentColor}60, inset 0 0 12px ${accentColor}20` } as any,
-    default: { shadowColor: accentColor, shadowOffset: { width: 0, height: 0 }, shadowRadius: 16, shadowOpacity: 1, elevation: 14 },
+    web: {
+      boxShadow: pressed
+        ? `0 0 18px ${accentColor}99, 0 0 32px ${accentColor}44`
+        : `0 0 10px ${accentColor}44, 0 0 20px ${accentColor}22`,
+    } as any,
+    default: {
+      shadowColor:   accentColor,
+      shadowOffset:  { width: 0, height: 0 },
+      shadowRadius:  pressed ? 14 : 8,
+      shadowOpacity: pressed ? 0.7  : 0.4,
+      elevation:     pressed ? 14   : 8,
+    },
   })!;
 
   const iconGlowShadow = Platform.select({
     web: { filter: `drop-shadow(0 0 8px ${accentColor})` } as any,
-    default: { shadowColor: accentColor, shadowOffset: { width: 0, height: 0 }, shadowRadius: 8, shadowOpacity: 0.95 },
+    default: {
+      shadowColor:   accentColor,
+      shadowOffset:  { width: 0, height: 0 },
+      shadowRadius:  8,
+      shadowOpacity: 0.95,
+    },
   })!;
 
-  // Pulsing border opacity
+  // ── Pulsing glow ring ─────────────────────────────────────────────────────
   useEffect(() => {
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1, duration: 2200, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1,    duration: 2200, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 0.55, duration: 2200, useNativeDriver: true }),
       ])
     );
@@ -68,86 +156,87 @@ export const TronGlassButton: React.FC<TronGlassButtonProps> = ({
     return () => pulse.stop();
   }, [pulseAnim]);
 
-  // Scan line sweep animation
-  useEffect(() => {
-    const scan = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scanAnim, { toValue: 1, duration: 3500, useNativeDriver: true }),
-        Animated.delay(2000),
-        Animated.timing(scanAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
-      ])
-    );
-    scan.start();
-    return () => scan.stop();
-  }, [scanAnim]);
+  // ── Dimensions ───────────────────────────────────────────────────────────
+  const col        = columns === 2 ? 2 : 3;
+  const buttonSize = buttonSizeProp ?? Math.floor((SCREEN_WIDTH - 48) / col);
 
-  // Button dimensions — use passed prop, or default 3-column layout
-  const buttonSize = buttonSizeProp ?? (SCREEN_WIDTH - 48) / 3;
+  // ── Colour helpers ───────────────────────────────────────────────────────
+  // accentColor + '66' → 40% opacity  (e.g. '#00FFFF66')
+  const borderColor = accentColor + '66';
 
   return (
+    // Outer wrapper: no overflow:hidden so shadow isn't clipped on native
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.72}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      activeOpacity={0.8}
       accessibilityRole="button"
       accessibilityLabel={label}
       style={[
-        styles.wrapper,
-        {
-          width: buttonSize,
-          height: buttonSize,
-        },
+        styles.shadowWrapper,
+        { width: buttonSize, height: buttonSize },
+        outerGlowShadow,
       ]}
     >
-      {/* LAYER 1: Outer pulsing glow ring */}
+
+      {/* Pulsing glow ring — absolute, behind inner container */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
-          styles.outerGlow,
-          { borderColor: accentColor, opacity: pulseAnim },
-          outerGlowShadow,
+          styles.pulseRing,
+          { borderColor, opacity: pulseAnim },
         ]}
         pointerEvents="none"
       />
 
-      {/* LAYER 2: Dark glass base with tron-teal tint */}
-      <View style={[styles.glassBase, { borderColor: accentColor + '66' }]}>
+      {/* ── Inner container: overflow:'hidden' clips all visual layers ── */}
+      <View style={[styles.innerContainer, { borderColor }]}>
 
-        {/* LAYER 3a: Background gradient (3D depth from top) */}
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <Svg width="100%" height="100%">
-            <Defs>
-              <LinearGradient id={`bgGrad-${label}`} x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0%" stopColor="rgba(255,255,255,0.08)" stopOpacity="1" />
-                <Stop offset="40%" stopColor="rgba(255,255,255,0)" stopOpacity="1" />
-              </LinearGradient>
-            </Defs>
-            {/* bg gradient */}
-            <Rect x="0" y="0" width="100%" height="100%" fill={`url(#bgGrad-${label})`} />
-          </Svg>
-        </View>
+        {/* LAYER 1 — Deep dark base */}
+        <View style={styles.base} />
 
-        {/* LAYER 4: Top glass reflection — 2px white band at top */}
-        <View style={styles.topReflection} pointerEvents="none" />
+        {/* LAYER 2 — The Shine (expo-linear-gradient, absolute fill) */}
+        <LinearGradient
+          colors={['rgba(255,255,255,0.08)', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
 
-        {/* CONTENT: Icon + Label + Sublabel */}
+        {/* LAYER 3 — The Lip (top edge light-catch) */}
+        <View style={styles.lip} pointerEvents="none" />
+
+        {/* ── Content ─────────────────────────────────────────────────── */}
         <View style={styles.content}>
-          <View style={[styles.iconWrapper, iconGlowShadow]}>
+
+          {/* Icon */}
+          <View style={iconGlowShadow}>
             {iconSource ? (
               <Image
                 source={iconSource}
-                style={{ width: buttonSize * 0.62, height: buttonSize * 0.62, resizeMode: 'contain' }}
+                style={{
+                  width:      buttonSize * 0.62,
+                  height:     buttonSize * 0.62,
+                  resizeMode: 'contain',
+                }}
               />
             ) : (
               icon
             )}
           </View>
+
+          {/* Title — Orbitron */}
           <Text
-            style={[styles.label, { color: '#FFFFFF' }]}
+            style={styles.label}
             numberOfLines={1}
             adjustsFontSizeToFit
           >
             {label}
           </Text>
+
+          {/* Sublabel — Share Tech Mono */}
           {!!sublabel && (
             <Text
               style={[styles.sublabel, { color: accentColor }]}
@@ -156,124 +245,85 @@ export const TronGlassButton: React.FC<TronGlassButtonProps> = ({
               {sublabel}
             </Text>
           )}
+
         </View>
 
+        {/* HUD BRACKETS — SVG L-shapes, visible only when pressed/active */}
+        {pressed && <HudBrackets color={accentColor} size={buttonSize} />}
+
       </View>
-
-      {/* Corner brackets — Tron HUD aesthetic */}
-      <View style={[styles.cornerTL, { borderColor: accentColor }]} pointerEvents="none" />
-      <View style={[styles.cornerTR, { borderColor: accentColor }]} pointerEvents="none" />
-      <View style={[styles.cornerBL, { borderColor: accentColor }]} pointerEvents="none" />
-      <View style={[styles.cornerBR, { borderColor: accentColor }]} pointerEvents="none" />
-
     </TouchableOpacity>
   );
 };
 
-const CORNER_SIZE = 10;
-const CORNER_WIDTH = 2;
-const BORDER_RADIUS = 24;
+// ─── Styles ─────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  wrapper: {
-    position: 'relative',
+  // Outer shell — no overflow:hidden so native shadow renders correctly
+  shadowWrapper: {
     borderRadius: BORDER_RADIUS,
-    overflow: 'hidden',
   },
-  outerGlow: {
+
+  // Pulsing glow ring sits between shadow wrapper and inner container
+  pulseRing: {
     borderRadius: BORDER_RADIUS,
-    borderWidth: 1,
+    borderWidth:  1.5,
   },
-  glassBase: {
-    width: '100%',
-    height: '100%',
+
+  // Inner container — overflow:hidden clips L1/L2/L3 to the 20px curve
+  innerContainer: {
+    width:        '100%',
+    height:       '100%',
     borderRadius: BORDER_RADIUS,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    backgroundColor: 'rgba(7, 24, 36, 0.85)',
+    overflow:     'hidden',
+    borderWidth:  1.5,
   },
-  topReflection: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+
+  // LAYER 1 — deep dark base
+  base: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(6,16,36,0.95)',
   },
-  bottomGlow: {
-    position: 'absolute',
-    bottom: 0,
-    left: '15%',
-    right: '15%',
-    height: 1,
-    opacity: 0.75,
+
+  // LAYER 3 — top-edge lip (light catch)
+  lip: {
+    position:        'absolute',
+    top:             0,
+    left:            0,
+    right:           0,
+    height:          1.5,
+    backgroundColor: '#ffffff',
+    opacity:         0.15,
   },
+
+  // Content stack
   content: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width:             '100%',
+    height:            '100%',
+    alignItems:        'center',
+    justifyContent:    'center',
     paddingHorizontal: 6,
-    paddingVertical: 8,
-    gap: 4,
+    paddingVertical:   8,
+    gap:               4,
   },
-  iconWrapper: {
-    marginBottom: 2,
-  },
+
+  // Title — Orbitron_700Bold
   label: {
-    fontSize: 10,
+    fontSize:      10,
     letterSpacing: 2,
-    textAlign: 'center',
+    textAlign:     'center',
     textTransform: 'uppercase',
-    color: '#00FFCC',
-    fontFamily: 'Orbitron_700Bold',
+    color:         '#FFFFFF',
+    fontFamily:    'Orbitron_700Bold',
   },
+
+  // Sublabel — ShareTechMono_400Regular
   sublabel: {
-    fontSize: 8,
-    letterSpacing: 0.6,
-    textAlign: 'center',
-    opacity: 0.82,
+    fontSize:      8,
+    letterSpacing: 1.5,
+    textAlign:     'center',
     textTransform: 'uppercase',
-  },
-  // Corner brackets
-  cornerTL: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    borderTopWidth: CORNER_WIDTH,
-    borderLeftWidth: CORNER_WIDTH,
-    borderTopLeftRadius: BORDER_RADIUS,
-  },
-  cornerTR: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    borderTopWidth: CORNER_WIDTH,
-    borderRightWidth: CORNER_WIDTH,
-    borderTopRightRadius: BORDER_RADIUS,
-  },
-  cornerBL: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    borderBottomWidth: CORNER_WIDTH,
-    borderLeftWidth: CORNER_WIDTH,
-    borderBottomLeftRadius: BORDER_RADIUS,
-  },
-  cornerBR: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: CORNER_SIZE,
-    height: CORNER_SIZE,
-    borderBottomWidth: CORNER_WIDTH,
-    borderRightWidth: CORNER_WIDTH,
-    borderBottomRightRadius: BORDER_RADIUS,
+    fontFamily:    'ShareTechMono_400Regular',
+    opacity:       0.82,
   },
 });

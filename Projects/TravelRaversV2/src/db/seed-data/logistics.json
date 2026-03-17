@@ -1,0 +1,26 @@
+[
+  {
+    "festivalName": "Creamfields 2026",
+    "nearestHospitalName": "Warrington Hospital (A&E)",
+    "hospitalDistanceMiles": 5.2,
+    "nearestTrainStation": "Warrington Bank Quay",
+    "avgDayTempC": 20,
+    "avgNightTempC": 12
+  },
+  {
+    "festivalName": "Boomtown Fair",
+    "nearestHospitalName": "Royal Hampshire County Hospital (Winchester)",
+    "hospitalDistanceMiles": 5.0,
+    "nearestTrainStation": "Winchester Railway Station",
+    "avgDayTempC": 21,
+    "avgNightTempC": 12
+  },
+  {
+    "festivalName": "Glastonbury",
+    "nearestHospitalName": "Yeovil District Hospital",
+    "hospitalDistanceMiles": 17.0,
+    "nearestTrainStation": "Castle Cary",
+    "avgDayTempC": 19,
+    "avgNightTempC": 10
+  }
+]

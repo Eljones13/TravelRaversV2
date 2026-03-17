@@ -10,6 +10,10 @@ import { useFonts, Orbitron_700Bold, Orbitron_900Black } from '@expo-google-font
 import { ShareTechMono_400Regular } from '@expo-google-fonts/share-tech-mono';
 import * as SplashScreen from 'expo-splash-screen';
 import { AppNavigator } from './src/navigation';
+import { FestivalProvider } from './src/context/FestivalContext';
+import { MusicProvider } from './src/context/MusicContext';
+import { initDatabase } from './src/db/database';
+import { seedDatabase } from './src/db/seed';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -26,12 +30,23 @@ export default function App() {
     }
   }, [fontsLoaded, fontError]);
 
+  // Initialise SQLite tables and seed on first launch
+  React.useEffect(() => {
+    initDatabase()
+      .then(() => seedDatabase())
+      .catch((err) => console.error('[DB] Init error:', err));
+  }, []);
+
   if (!fontsLoaded && !fontError) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AppNavigator />
+        <FestivalProvider>
+          <MusicProvider>
+            <AppNavigator />
+          </MusicProvider>
+        </FestivalProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

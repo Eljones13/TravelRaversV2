@@ -1,9 +1,9 @@
 // ============================================================
 // TRAVEL RAVERS — Navigation
-// Overnight session: All 12 module screens accessible from HomeStack
+// Root stack: FestivalSelect (on first launch) → Tab navigator
 //   - Bottom tab navigator: HOME | SQUAD
 //   - HomeStack: HomeScreen + ALL 12 module screens
-//   - SquadStack: SquadPanelScreen + 5 secondary module screens
+//   - SquadStack: SquadPanelScreen + module screens
 //   - Tab bar: Tron glass styling — dark bg, cyan/magenta glows
 // ============================================================
 
@@ -14,8 +14,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/colors';
+import { useFestival } from '../context/FestivalContext';
+import { MiniPlayerBar } from '../components/MiniPlayerBar';
 
-// ── Screen imports — HOME stack (all 12 modules) ──
+// ── Screen imports — ROOT ──────────────────────────────────────
+import { FestivalSelectScreen } from '../screens/FestivalSelectScreen';
+
+// ── Screen imports — HOME stack (all 12 modules) ──────────────
 import { HomeScreen } from '../screens/HomeScreen';
 import { EventsScreen } from '../screens/EventsScreen';
 import { MapScreen } from '../screens/MapScreen';
@@ -30,7 +35,12 @@ import { BudgetScreen } from '../screens/BudgetScreen';
 import { SquadPanelScreen } from '../screens/SquadPanelScreen';
 import { SquadSetupScreen } from '../screens/SquadSetupScreen';
 
-// ── Stack param lists ──
+// ── Stack param lists ──────────────────────────────────────────
+export type RootStackParamList = {
+  FestivalSelect: undefined;
+  MainApp: undefined;
+};
+
 export type HomeStackParamList = {
   HomeMain: undefined;
   Events: undefined;
@@ -63,9 +73,10 @@ export type RootTabParamList = {
   SquadTab: undefined;
 };
 
-const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const RootStack  = createNativeStackNavigator<RootStackParamList>();
+const HomeStack  = createNativeStackNavigator<HomeStackParamList>();
 const SquadStack = createNativeStackNavigator<SquadStackParamList>();
-const Tab = createBottomTabNavigator<RootTabParamList>();
+const Tab        = createBottomTabNavigator<RootTabParamList>();
 
 const stackOptions = {
   headerShown: false,
@@ -73,50 +84,50 @@ const stackOptions = {
   animation: 'fade' as const,
 } as const;
 
-// ── HOME Stack — all 12 screens accessible from HomeScreen ──
+// ── HOME Stack — all 12 screens accessible from HomeScreen ────
 function HomeStackNavigator(): React.ReactElement {
   return (
     <HomeStack.Navigator screenOptions={stackOptions} initialRouteName="HomeMain">
-      <HomeStack.Screen name="HomeMain" component={HomeScreen} />
-      <HomeStack.Screen name="Events" component={EventsScreen} />
-      <HomeStack.Screen name="Map" component={MapScreen} />
-      <HomeStack.Screen name="Timetable" component={TimetableScreen} />
-      <HomeStack.Screen name="Kit" component={KitScreen} />
-      <HomeStack.Screen name="SOS" component={SOSScreen} />
-      <HomeStack.Screen name="Track" component={TrackScreen} />
-      <HomeStack.Screen name="Radar" component={RadarScreen} />
-      <HomeStack.Screen name="Weather" component={WeatherScreen} />
-      <HomeStack.Screen name="PixelParty" component={PixelPartyScreen} />
-      <HomeStack.Screen name="Budget" component={BudgetScreen} />
-      <HomeStack.Screen name="SquadPanel" component={SquadPanelScreen} />
-      <HomeStack.Screen name="SquadSetup" component={SquadSetupScreen} />
+      <HomeStack.Screen name="HomeMain"   component={HomeScreen}      />
+      <HomeStack.Screen name="Events"     component={EventsScreen}    />
+      <HomeStack.Screen name="Map"        component={MapScreen}       />
+      <HomeStack.Screen name="Timetable"  component={TimetableScreen} />
+      <HomeStack.Screen name="Kit"        component={KitScreen}       />
+      <HomeStack.Screen name="SOS"        component={SOSScreen}       />
+      <HomeStack.Screen name="Track"      component={TrackScreen}     />
+      <HomeStack.Screen name="Radar"      component={RadarScreen}     />
+      <HomeStack.Screen name="Weather"    component={WeatherScreen}   />
+      <HomeStack.Screen name="PixelParty" component={PixelPartyScreen}/>
+      <HomeStack.Screen name="Budget"     component={BudgetScreen}    />
+      <HomeStack.Screen name="SquadPanel" component={SquadPanelScreen}/>
+      <HomeStack.Screen name="SquadSetup" component={SquadSetupScreen}/>
     </HomeStack.Navigator>
   );
 }
 
-// ── SQUAD Stack — shortcut tab for squad-focused flow ──
+// ── SQUAD Stack — shortcut tab for squad-focused flow ─────────
 function SquadStackNavigator(): React.ReactElement {
   return (
     <SquadStack.Navigator screenOptions={stackOptions} initialRouteName="SquadPanel">
-      <SquadStack.Screen name="SquadPanel" component={SquadPanelScreen} />
-      <SquadStack.Screen name="Radar" component={RadarScreen} />
-      <SquadStack.Screen name="Weather" component={WeatherScreen} />
-      <SquadStack.Screen name="PixelParty" component={PixelPartyScreen} />
-      <SquadStack.Screen name="Budget" component={BudgetScreen} />
-      <SquadStack.Screen name="SquadSetup" component={SquadSetupScreen} />
-      <SquadStack.Screen name="Kit" component={KitScreen} />
-      <SquadStack.Screen name="SOS" component={SOSScreen} />
+      <SquadStack.Screen name="SquadPanel" component={SquadPanelScreen}/>
+      <SquadStack.Screen name="Radar"      component={RadarScreen}     />
+      <SquadStack.Screen name="Weather"    component={WeatherScreen}   />
+      <SquadStack.Screen name="PixelParty" component={PixelPartyScreen}/>
+      <SquadStack.Screen name="Budget"     component={BudgetScreen}    />
+      <SquadStack.Screen name="SquadSetup" component={SquadSetupScreen}/>
+      <SquadStack.Screen name="Kit"        component={KitScreen}       />
+      <SquadStack.Screen name="SOS"        component={SOSScreen}       />
     </SquadStack.Navigator>
   );
 }
 
-// ── Tab Bar Icons ──
-// Rendered directly in tabBarIcon configuration
+// Tab bar height — must match tabStyles.bar height exactly
+const TAB_BAR_H = Platform.OS === 'ios' ? 80 : 64;
 
-// ── App Navigator (Root) ──
-export const AppNavigator: React.FC = () => {
+// ── Tab navigator ─────────────────────────────────────────────
+function TabNavigator(): React.ReactElement {
   return (
-    <NavigationContainer>
+    <View style={{ flex: 1 }}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
@@ -126,7 +137,15 @@ export const AppNavigator: React.FC = () => {
           tabBarIcon: ({ color, focused }) => {
             const iconName = route.name === 'HomeTab' ? 'home-outline' : 'people-outline';
             return (
-              <View style={focused ? (route.name === 'HomeTab' ? tabStyles.iconWrapperActive : tabStyles.iconWrapperActiveMagenta) : tabStyles.iconWrapper}>
+              <View
+                style={
+                  focused
+                    ? route.name === 'HomeTab'
+                      ? tabStyles.iconWrapperActive
+                      : tabStyles.iconWrapperActiveMagenta
+                    : tabStyles.iconWrapper
+                }
+              >
                 <Ionicons name={iconName} size={22} color={color} />
               </View>
             );
@@ -138,14 +157,60 @@ export const AppNavigator: React.FC = () => {
           ),
         })}
       >
-        <Tab.Screen name="HomeTab" component={HomeStackNavigator} />
+        <Tab.Screen name="HomeTab"  component={HomeStackNavigator}  />
         <Tab.Screen name="SquadTab" component={SquadStackNavigator} />
       </Tab.Navigator>
+
+      {/*
+       * MiniPlayerBar — absolutely positioned above the tab bar.
+       * Tab.Navigator fills flex:1 entirely (including its own tab bar),
+       * so a sibling View would be pushed off-screen.
+       * Absolute positioning at bottom=TAB_BAR_H overlays it correctly.
+       */}
+      <View style={{
+        position: 'absolute',
+        bottom: TAB_BAR_H,
+        left: 0,
+        right: 0,
+        zIndex: 999,
+        elevation: 999,
+      }}>
+        <MiniPlayerBar />
+      </View>
+    </View>
+  );
+}
+
+// ── Root navigator — gates on festival selection ──────────────
+// Must be rendered inside NavigationContainer AND inside
+// FestivalProvider (which lives in App.tsx above AppNavigator).
+function RootNavigator(): React.ReactElement {
+  const { selectedFestival, isLoading } = useFestival();
+
+  // While AsyncStorage hydrates, render nothing (SplashScreen is still visible)
+  if (isLoading) return <View style={{ flex: 1, backgroundColor: Colors.bg }} />;
+
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+      {selectedFestival === null ? (
+        <RootStack.Screen name="FestivalSelect" component={FestivalSelectScreen} />
+      ) : (
+        <RootStack.Screen name="MainApp" component={TabNavigator} />
+      )}
+    </RootStack.Navigator>
+  );
+}
+
+// ── AppNavigator (exported) ───────────────────────────────────
+export const AppNavigator: React.FC = () => {
+  return (
+    <NavigationContainer>
+      <RootNavigator />
     </NavigationContainer>
   );
 };
 
-// ── Tab bar styles ──
+// ── Tab bar styles ─────────────────────────────────────────────
 const tabStyles = StyleSheet.create({
   bar: {
     backgroundColor: 'rgba(3,6,15,0.98)',
@@ -156,7 +221,12 @@ const tabStyles = StyleSheet.create({
     paddingTop: 6,
     ...Platform.select({
       web: { boxShadow: `0px -2px 8px ${Colors.cyan}14` } as any,
-      default: { shadowColor: Colors.cyan, shadowOffset: { width: 0, height: -2 }, shadowRadius: 8, shadowOpacity: 0.08 }
+      default: {
+        shadowColor: Colors.cyan,
+        shadowOffset: { width: 0, height: -2 },
+        shadowRadius: 8,
+        shadowOpacity: 0.08,
+      },
     }),
     elevation: 16,
   },
@@ -173,7 +243,12 @@ const tabStyles = StyleSheet.create({
     backgroundColor: 'rgba(0,245,255,0.06)',
     ...Platform.select({
       web: { boxShadow: `0px 0px 6px ${Colors.cyan}80` } as any,
-      default: { shadowColor: Colors.cyan, shadowOffset: { width: 0, height: 0 }, shadowRadius: 6, shadowOpacity: 0.5 }
+      default: {
+        shadowColor: Colors.cyan,
+        shadowOffset: { width: 0, height: 0 },
+        shadowRadius: 6,
+        shadowOpacity: 0.5,
+      },
     }),
   },
   iconWrapperActiveMagenta: {
@@ -182,7 +257,12 @@ const tabStyles = StyleSheet.create({
     backgroundColor: 'rgba(255,0,255,0.06)',
     ...Platform.select({
       web: { boxShadow: `0px 0px 6px ${Colors.magenta}80` } as any,
-      default: { shadowColor: Colors.magenta, shadowOffset: { width: 0, height: 0 }, shadowRadius: 6, shadowOpacity: 0.5 }
+      default: {
+        shadowColor: Colors.magenta,
+        shadowOffset: { width: 0, height: 0 },
+        shadowRadius: 6,
+        shadowOpacity: 0.5,
+      },
     }),
   },
   iconWrapper: {

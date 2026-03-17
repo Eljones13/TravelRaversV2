@@ -93,6 +93,35 @@ I have a stutter which I am actively managing. I prefer written communication ov
 
 ---
 
+## NOTEBOOKLM INTEGRATION
+
+The `notebooklm` CLI tool is installed and authenticated on this system. Use it as a research layer before building any major feature.
+
+**CLI reference:**
+- `notebooklm list` — show all notebooks
+- `notebooklm use [partial-id]` — set active notebook context
+- `notebooklm ask "[question]"` — query the active notebook
+
+**Travel Ravers notebooks:**
+- `2cec9263` — **Travel Ravers HQ** (main product research — use this for app features)
+- `463b2f29` — **Travel Ravers Engineer** (technical build notes)
+
+**When to use NotebookLM:**
+Before building any major feature (Radar, Pixel Party, Track Hunter, Budget, Weather, Squad), run:
+```
+notebooklm use 2cec9263
+notebooklm ask "What are the exact business rules and UX requirements for [Feature Name]?"
+```
+Use the response to:
+1. Confirm the feature scope matches Errol's original vision
+2. Extract any brand voice or "Concerned Dad" copy requirements
+3. Identify any offline-first or safety constraints that must be respected
+4. Ensure the build stays 'Unbreakable' — no feature ships without its research pass
+
+**Rule:** If NotebookLM returns content that contradicts the current build plan, flag it to Errol before proceeding.
+
+---
+
 ## HOW I LIKE TO WORK
 
 - Break big tasks into small daily steps

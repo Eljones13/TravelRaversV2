@@ -4,10 +4,10 @@
     "slug": "travel-ravers",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo-v1.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/logo-v1.png",
       "resizeMode": "contain",
       "backgroundColor": "#03060f"
     },
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo-v1.png",
         "backgroundColor": "#03060f"
       },
       "package": "com.travelravers.app"
@@ -26,7 +26,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "@rnmapbox/maps/app.plugin.js",
+        {
+          "RNMapboxMapsDownloadToken": "process.env.RNMapboxMapsDownloadToken",
+          "RNMapboxMapsImpl": "mapbox"
+        }
+      ]
     ],
     "scheme": "travelravers",
     "extra": {

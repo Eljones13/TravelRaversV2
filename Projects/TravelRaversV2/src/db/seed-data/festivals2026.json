@@ -1,0 +1,222 @@
+[
+  {
+    "id": "creamfields-2026",
+    "name": "Creamfields",
+    "country": "UK",
+    "startDate": "2026-08-27",
+    "endDate": "2026-08-30",
+    "ticketPrice": "£175-290",
+    "latitude": 53.34,
+    "longitude": -2.63,
+    "isCashless": true
+  },
+  {
+    "id": "tomorrowland-2026-w1",
+    "name": "Tomorrowland Weekend 1",
+    "country": "Belgium",
+    "startDate": "2026-07-17",
+    "endDate": "2026-07-19",
+    "ticketPrice": "€350-400",
+    "latitude": 51.0924,
+    "longitude": 4.3717,
+    "isCashless": true
+  },
+  {
+    "id": "tomorrowland-2026-w2",
+    "name": "Tomorrowland Weekend 2",
+    "country": "Belgium",
+    "startDate": "2026-07-24",
+    "endDate": "2026-07-26",
+    "ticketPrice": "€350-400",
+    "latitude": 51.0924,
+    "longitude": 4.3717,
+    "isCashless": true
+  },
+  {
+    "id": "boomtown-2026",
+    "name": "Boomtown",
+    "country": "UK",
+    "startDate": "2026-08-12",
+    "endDate": "2026-08-16",
+    "ticketPrice": "£295-380",
+    "latitude": 51.035,
+    "longitude": -1.265,
+    "isCashless": true
+  },
+  {
+    "id": "awakenings-2026",
+    "name": "Awakenings Festival",
+    "country": "Netherlands",
+    "startDate": "2026-07-10",
+    "endDate": "2026-07-12",
+    "ticketPrice": "€240",
+    "latitude": 51.5234,
+    "longitude": 5.117,
+    "isCashless": true
+  },
+  {
+    "id": "parklife-2026",
+    "name": "Parklife",
+    "country": "UK",
+    "startDate": "2026-06-20",
+    "endDate": "2026-06-21",
+    "ticketPrice": "£140-220",
+    "latitude": 53.535,
+    "longitude": -2.255,
+    "isCashless": true
+  },
+  {
+    "id": "terminal-v-2026",
+    "name": "Terminal V Edinburgh",
+    "country": "UK",
+    "startDate": "2026-04-18",
+    "endDate": "2026-04-19",
+    "ticketPrice": "£85-120",
+    "latitude": 55.926,
+    "longitude": -3.315,
+    "isCashless": true
+  },
+  {
+    "id": "junction-2-2026",
+    "name": "Junction 2",
+    "country": "UK",
+    "startDate": "2026-07-24",
+    "endDate": "2026-07-26",
+    "ticketPrice": "£70-90",
+    "latitude": 51.491,
+    "longitude": -0.321,
+    "isCashless": true
+  },
+  {
+    "id": "houghton-2026",
+    "name": "Houghton Festival",
+    "country": "UK",
+    "startDate": "2026-08-06",
+    "endDate": "2026-08-09",
+    "ticketPrice": "£250-300",
+    "latitude": 52.827,
+    "longitude": 0.656,
+    "isCashless": true
+  },
+  {
+    "id": "dekmantel-2026",
+    "name": "Dekmantel Festival",
+    "country": "Netherlands",
+    "startDate": "2026-07-31",
+    "endDate": "2026-08-02",
+    "ticketPrice": "€250",
+    "latitude": 52.3135,
+    "longitude": 4.8288,
+    "isCashless": true
+  },
+  {
+    "id": "forbidden-forest-2026",
+    "name": "Forbidden Forest",
+    "country": "UK",
+    "startDate": "2026-06-04",
+    "endDate": "2026-06-07",
+    "ticketPrice": "£180-240",
+    "latitude": 52.8945,
+    "longitude": -0.7826,
+    "isCashless": true
+  },
+  {
+    "id": "ultra-europe-2026",
+    "name": "Ultra Europe",
+    "country": "Croatia",
+    "startDate": "2026-07-10",
+    "endDate": "2026-07-12",
+    "ticketPrice": "€180-250",
+    "latitude": 43.5191,
+    "longitude": 16.4459,
+    "isCashless": true
+  },
+  {
+    "id": "sonus-2026",
+    "name": "Sonus Festival",
+    "country": "Croatia",
+    "startDate": "2026-08-16",
+    "endDate": "2026-08-21",
+    "ticketPrice": "€150-200",
+    "latitude": 44.54,
+    "longitude": 14.915,
+    "isCashless": true
+  },
+  {
+    "id": "time-warp-2026",
+    "name": "Time Warp Germany",
+    "country": "Germany",
+    "startDate": "2026-03-21",
+    "endDate": "2026-03-21",
+    "ticketPrice": "€90",
+    "latitude": 49.4651,
+    "longitude": 8.5171,
+    "isCashless": true
+  },
+  {
+    "id": "stone-techno-2026",
+    "name": "Stone Techno Festival",
+    "country": "Germany",
+    "startDate": "2026-07-10",
+    "endDate": "2026-07-12",
+    "ticketPrice": "€120-180",
+    "latitude": 51.485,
+    "longitude": 7.048,
+    "isCashless": true
+  },
+  {
+    "id": "kappa-futur-2026",
+    "name": "Kappa FuturFestival",
+    "country": "Italy",
+    "startDate": "2026-07-03",
+    "endDate": "2026-07-05",
+    "ticketPrice": "€90-140",
+    "latitude": 45.09,
+    "longitude": 7.675,
+    "isCashless": true
+  },
+  {
+    "id": "pavilion-2026",
+    "name": "Pavilion Festival",
+    "country": "UK",
+    "startDate": "2026-05-02",
+    "endDate": "2026-05-03",
+    "ticketPrice": "£80-120",
+    "latitude": 55.458,
+    "longitude": -4.631,
+    "isCashless": true
+  },
+  {
+    "id": "lost-and-found-2026",
+    "name": "Lost & Found Festival",
+    "country": "UK",
+    "startDate": "2026-06-27",
+    "endDate": "2026-06-27",
+    "ticketPrice": "£50-70",
+    "latitude": 53.421,
+    "longitude": -2.908,
+    "isCashless": true
+  },
+  {
+    "id": "subcity-2026",
+    "name": "Sub City Festival",
+    "country": "UK",
+    "startDate": "2026-05-22",
+    "endDate": "2026-05-24",
+    "ticketPrice": "£75-100",
+    "latitude": 55.8642,
+    "longitude": -4.2518,
+    "isCashless": true
+  },
+  {
+    "id": "drumcode-2026",
+    "name": "Drumcode Festival",
+    "country": "Netherlands",
+    "startDate": "2026-08-29",
+    "endDate": "2026-08-30",
+    "ticketPrice": "€100-130",
+    "latitude": 52.3702,
+    "longitude": 4.8952,
+    "isCashless": true
+  }
+]
